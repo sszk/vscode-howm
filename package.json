@@ -1,0 +1,175 @@
+{
+  "name": "markdown-howm",
+  "displayName": "Markdown howm",
+  "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
+  "version": "0.1.0",
+  "publisher": "local-howm",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "test": "npm run compile && node --test test/*.test.cjs",
+    "package": "npm run compile && vsce package --allow-missing-repository",
+    "test:integration": "npm run compile && node scripts/integration.cjs"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "howm.home",
+        "title": "howm: ホーム"
+      },
+      {
+        "command": "howm.create",
+        "title": "howm: 新しいメモ"
+      },
+      {
+        "command": "howm.capture",
+        "title": "howm: 速記"
+      },
+      {
+        "command": "howm.search",
+        "title": "howm: 全文検索"
+      },
+      {
+        "command": "howm.searchRegex",
+        "title": "howm: 正規表現検索"
+      },
+      {
+        "command": "howm.list",
+        "title": "howm: メモ一覧"
+      },
+      {
+        "command": "howm.recent",
+        "title": "howm: 最近のメモ"
+      },
+      {
+        "command": "howm.follow",
+        "title": "howm: カーソル位置のリンクを開く"
+      },
+      {
+        "command": "howm.related",
+        "title": "howm: 関連メモ"
+      },
+      {
+        "command": "howm.concatenate",
+        "title": "howm: 検索結果を連結表示"
+      },
+      {
+        "command": "howm.reminders",
+        "title": "howm: Todoと予定"
+      },
+      {
+        "command": "howm.complete",
+        "title": "howm: この行のリマインダを完了"
+      },
+      {
+        "command": "howm.changeDate",
+        "title": "howm: この行の日付を変更"
+      },
+      {
+        "command": "howm.insertDate",
+        "title": "howm: 今日の日付を挿入"
+      },
+      {
+        "command": "howm.insertKeyword",
+        "title": "howm: キーワードを挿入"
+      },
+      {
+        "command": "howm.history",
+        "title": "howm: 検索履歴"
+      },
+      {
+        "command": "howm.random",
+        "title": "howm: ランダムなメモ"
+      },
+      {
+        "command": "howm.refresh",
+        "title": "howm: 索引を再構築"
+      },
+      {
+        "command": "howm.configure",
+        "title": "howm: メモの保存先を選択"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "howm.create",
+        "key": "ctrl+alt+n",
+        "mac": "cmd+alt+n"
+      },
+      {
+        "command": "howm.search",
+        "key": "ctrl+alt+h",
+        "mac": "cmd+alt+h"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "howm.notes",
+          "name": "howm"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "howm.create",
+          "when": "view == howm.notes",
+          "group": "navigation"
+        },
+        {
+          "command": "howm.search",
+          "when": "view == howm.notes",
+          "group": "navigation"
+        },
+        {
+          "command": "howm.refresh",
+          "when": "view == howm.notes"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Markdown howm",
+      "properties": {
+        "howm.notesDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "メモの保存先。空欄はワークスペース内のhowm。絶対パス、~/、ワークスペース相対パスに対応。"
+        },
+        "howm.filenamePattern": {
+          "type": "string",
+          "default": "{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md",
+          "description": "新規メモのファイル名。重複時は連番を追加。"
+        },
+        "howm.template": {
+          "type": "string",
+          "default": "# {title}\n\n[{date} {time}]\n\n{body}\n",
+          "description": "新規メモ。{title}, {date}, {time}, {body}を使用可能。"
+        },
+        "howm.maxFileSizeKB": {
+          "type": "number",
+          "default": 1024,
+          "minimum": 1,
+          "description": "索引に含めるMarkdownファイルの最大サイズ(KB)。"
+        }
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^3.0.0",
+    "prettier": "^3.9.9",
+    "typescript": "^5.7.0"
+  }
+}

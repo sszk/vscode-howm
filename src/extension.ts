@@ -8,7 +8,7 @@ import {
   parseNote,
   dateString,
   dayNumber,
-  priority,
+  reminderList,
   renderTemplate,
   filename,
 } from "./core";
@@ -475,43 +475,87 @@ export async function activate(context: vscode.ExtensionContext) {
     if (e && keyword) await e.edit((b) => b.replace(e.selection, keyword));
   });
   register("reminders", async () => {
-    const today = dateString(),
-      day = dayNumber(today);
-    const reminders = store
-      .all()
-      .flatMap((note) =>
-        note.reminders.map((r) => ({ note, r, score: priority(r, today) })),
-      )
-      .filter((x) => x.r.kind !== ".");
-    const schedule = reminders
-      .filter(
-        (x) =>
-          (x.r.kind === "@" || x.r.kind === "!") && dayNumber(x.r.date) >= day,
-      )
-      .sort((a, b) => a.r.date.localeCompare(b.r.date));
-    const todos = reminders
-      .filter((x) => x.r.kind !== "@" && Number.isFinite(x.score))
-      .sort((a, b) => b.score - a.score);
-    const row = (x: (typeof reminders)[number]) => ({
+    // Reconcile before opening: filesystem notifications can be missed when
+    // a watched directory did not exist yet or a sync client replaces it.
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Window,
+        title: "howm: Todoと予定を読み込み中",
+      },
+      () => store.initialize(),
+    );
+    const today = dateString();
+    const { all, unfinished, schedule, todos, hidden } = reminderList(
+      store.all(),
+      today,
+    );
+    const row = (x: (typeof all)[number]) => ({
       label: `${x.r.date} ${x.r.kind} ${x.r.text}`,
       description: x.note.title,
       note: x.note,
       line: x.r.line,
     });
-    const items: (vscode.QuickPickItem & { note?: Note; line?: number })[] = [
-      { label: "Todo（優先度順）", kind: vscode.QuickPickItemKind.Separator },
-      ...todos.map(row),
+    const items: (vscode.QuickPickItem & {
+      note?: Note;
+      line?: number;
+      action?: string;
+    })[] = [];
+    if (todos.length)
+      items.push(
+        { label: "Todo（優先度順）", kind: vscode.QuickPickItemKind.Separator },
+        ...todos.map(row),
+      );
+    if (schedule.length)
+      items.push(
+        {
+          label: "これからの予定・締切",
+          kind: vscode.QuickPickItemKind.Separator,
+        },
+        ...schedule.map(row),
+      );
+    if (!items.length) {
+      const reason = !store.notes.size
+        ? "対象のMarkdownメモが読み込まれていません。保存先を確認してください。"
+        : !all.length
+          ? "リマインダが見つかりません。本文に [YYYY-MM-DD]+ 内容 のように記述してください（コードブロック内は対象外）。"
+          : !unfinished.length
+            ? "リマインダはすべて完了済みです。"
+            : "開始前のTodo、または過去の予定だけが見つかりました。";
+      items.push({ label: reason, alwaysShow: true });
+    }
+    if (hidden.length)
+      items.push(
+        {
+          label: "開始前のTodo・過去の予定を確認",
+          kind: vscode.QuickPickItemKind.Separator,
+        },
+        ...hidden.map(row),
+      );
+    items.push(
+      { label: "設定と更新", kind: vscode.QuickPickItemKind.Separator },
       {
-        label: "これからの予定・締切",
-        kind: vscode.QuickPickItemKind.Separator,
+        label: "$(folder-opened) メモの保存先を選択",
+        description: store.root?.fsPath || "未設定",
+        action: "configure",
+        alwaysShow: true,
       },
-      ...schedule.map(row),
-    ];
+      {
+        label: "$(refresh) 索引を再構築して再表示",
+        action: "refresh",
+        alwaysShow: true,
+      },
+    );
     const chosen = await vscode.window.showQuickPick(items, {
+      title: `howm: Todoと予定 — ${today} / メモ${store.notes.size}件 / リマインダ${all.length}件`,
+      matchOnDescription: true,
       placeHolder:
         "選択すると元の行へ移動。完了は howm: この行のリマインダを完了",
     });
     if (chosen?.note) await open(chosen.note, chosen.line);
+    else if (chosen?.action) {
+      await vscode.commands.executeCommand(`howm.${chosen.action}`);
+      await vscode.commands.executeCommand("howm.reminders");
+    }
   });
   register("complete", async () => {
     const e = vscode.window.activeTextEditor;

@@ -80,8 +80,65 @@ exports.run = async () => {
     for (const link of sourceLinks)
       assert.ok(virtual.getText(link.range).startsWith("元のメモを開く:"));
 
+    const watcherStore = new Store();
+    await watcherStore.initialize();
+    await fs.writeFile(
+      path.join(root, "todo.md"),
+      `# Todo test\n[2000-01-01]+ パレット表示の検証\n`,
+    );
+    for (
+      let retry = 0;
+      retry < 100 &&
+      !watcherStore.notes.has(
+        vscode.Uri.file(path.join(root, "todo.md")).toString(),
+      );
+      retry++
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    assert.ok(
+      watcherStore.notes.has(
+        vscode.Uri.file(path.join(root, "todo.md")).toString(),
+      ),
+      "new notes should be indexed automatically by the watcher",
+    );
+    watcherStore.dispose();
+    const reminderCommand = vscode.commands.executeCommand("howm.reminders");
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await vscode.commands.executeCommand(
+      "workbench.action.acceptSelectedQuickOpenItem",
+    );
+    await reminderCommand;
+    assert.equal(
+      vscode.window.activeTextEditor.document.uri.fsPath,
+      path.join(root, "todo.md"),
+    );
+    assert.equal(vscode.window.activeTextEditor.selection.active.line, 1);
+
+    // Start with a missing directory, then create notes there. Opening the
+    // reminder picker must find them even if filesystem notifications lag.
+    const freshRoot = path.join(root, "new-notes");
+    await vscode.workspace
+      .getConfiguration("howm")
+      .update("notesDirectory", freshRoot, vscode.ConfigurationTarget.Global);
+    await vscode.commands.executeCommand("howm.refresh");
+    await fs.mkdir(path.join(freshRoot, "nested"), { recursive: true });
+    const freshTodo = path.join(freshRoot, "nested", "fresh.md");
+    await fs.writeFile(
+      freshTodo,
+      "# Newly created\n[2000-01-01]+ 新しい保存先のTodo\n",
+    );
+    const freshCommand = vscode.commands.executeCommand("howm.reminders");
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await vscode.commands.executeCommand(
+      "workbench.action.acceptSelectedQuickOpenItem",
+    );
+    await freshCommand;
+    assert.equal(vscode.window.activeTextEditor.document.uri.fsPath, freshTodo);
+    assert.equal(vscode.window.activeTextEditor.selection.active.line, 1);
+
     console.log(
-      "INTEGRATION PASSED: activation, links, completion, undo, dirty overlay, external edit/delete",
+      "INTEGRATION PASSED: activation, links, completion, undo, dirty overlay, external edit/delete, reminder picker selection",
     );
   } finally {
     await fs.rm(root, { recursive: true, force: true });

@@ -109,3 +109,30 @@ test("ten thousand notes can be indexed and searched", () => {
     `10,000 notes: parse ${(indexed - start).toFixed(0)}ms, search ${(performance.now() - indexed).toFixed(0)}ms`,
   );
 });
+test("reminder list includes active tasks and exposes why other entries are hidden", () => {
+  const { reminderList } = require("../dist/core");
+  const note = parseNote(
+    "a",
+    "[2026-10-08]+ 今日のTodo\n[2026-10-15]+ 開始前\n[2026-10-12]@ 予定\n[2026-10-01]@ 過去\n[2026-10-08]. 完了",
+  );
+  const result = reminderList([note], "2026-10-08");
+  assert.equal(result.all.length, 5);
+  assert.deepEqual(
+    result.todos.map((x) => x.r.text),
+    ["今日のTodo"],
+  );
+  assert.deepEqual(
+    result.schedule.map((x) => x.r.text),
+    ["予定"],
+  );
+  assert.deepEqual(
+    result.hidden.map((x) => x.r.text),
+    ["開始前", "過去"],
+  );
+  assert.equal(reminderList([], "2026-10-08").all.length, 0);
+  assert.equal(
+    reminderList([parseNote("a", "[2026-10-08]. 完了")], "2026-10-08")
+      .unfinished.length,
+    0,
+  );
+});

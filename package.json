@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.1.2",
+  "version": "0.2.3",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -19,7 +19,8 @@
     "compile": "tsc -p .",
     "test": "npm run compile && node --test test/*.test.cjs",
     "package": "npm run compile && vsce package --allow-missing-repository",
-    "test:integration": "npm run compile && node scripts/integration.cjs"
+    "test:integration": "npm run compile && node scripts/integration.cjs",
+    "test:view-registration": "npm run compile && node scripts/integration.cjs --missing-view"
   },
   "contributes": {
     "commands": [
@@ -29,7 +30,8 @@
       },
       {
         "command": "howm.create",
-        "title": "howm: 新しいメモ"
+        "title": "howm: 新しいメモ",
+        "icon": "$(new-file)"
       },
       {
         "command": "howm.capture",
@@ -37,7 +39,8 @@
       },
       {
         "command": "howm.search",
-        "title": "howm: 全文検索"
+        "title": "howm: 全文検索",
+        "icon": "$(search)"
       },
       {
         "command": "howm.searchRegex",
@@ -93,11 +96,22 @@
       },
       {
         "command": "howm.refresh",
-        "title": "howm: 索引を再構築"
+        "title": "howm: 索引を再構築",
+        "icon": "$(refresh)"
       },
       {
         "command": "howm.configure",
-        "title": "howm: メモの保存先を選択"
+        "title": "howm: メモの保存先を選択",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "howm.showTodos",
+        "title": "howm: Todoサイドバーを開く"
+      },
+      {
+        "command": "howm.completeReminder",
+        "title": "howm: リマインダを完了",
+        "icon": "$(check)"
       }
     ],
     "keybindings": [
@@ -113,10 +127,14 @@
       }
     ],
     "views": {
-      "explorer": [
+      "howm": [
+        {
+          "id": "howm.todos",
+          "name": "Todoと予定"
+        },
         {
           "id": "howm.notes",
-          "name": "howm"
+          "name": "メモ一覧"
         }
       ]
     },
@@ -125,16 +143,40 @@
         {
           "command": "howm.create",
           "when": "view == howm.notes",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "howm.search",
           "when": "view == howm.notes",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "howm.refresh",
-          "when": "view == howm.notes"
+          "when": "view == howm.notes",
+          "group": "navigation@3"
+        },
+        {
+          "command": "howm.refresh",
+          "when": "view == howm.todos",
+          "group": "navigation@1"
+        },
+        {
+          "command": "howm.configure",
+          "when": "view == howm.todos",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "howm.completeReminder",
+          "when": "view == howm.todos && viewItem == howm.reminder",
+          "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "howm.completeReminder",
+          "when": "false"
         }
       ]
     },
@@ -163,6 +205,15 @@
           "description": "索引に含めるMarkdownファイルの最大サイズ(KB)。"
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "howm",
+          "title": "howm",
+          "icon": "resources/howm.svg"
+        }
+      ]
     }
   },
   "devDependencies": {

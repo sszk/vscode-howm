@@ -136,3 +136,42 @@ test("reminder list includes active tasks and exposes why other entries are hidd
     0,
   );
 });
+test("note date uses a header timestamp instead of a reminder or filename date", () => {
+  const { noteDisplayDate } = require("../dist/core");
+  const note = parseNote(
+    "file:///2026-09-01-120000.md",
+    "# Note\n[2026-10-20]! Deadline\n\n[2026-09-21 14:30]\n",
+  );
+  assert.deepEqual(noteDisplayDate(note), {
+    date: "2026-09-21",
+    source: "メモ内の日付",
+  });
+});
+test("note date ignores code and invalid dates and falls back to a filename", () => {
+  const { noteDisplayDate } = require("../dist/core");
+  const note = parseNote(
+    "file:///2026-09-01-120000.md",
+    "```\n[2026-10-01 12:00]\n```\n`[2026-10-02]`\n[2026-02-30]\n[2026-10-03 24:00]\n[2026-10-20]+ Todo",
+  );
+  assert.deepEqual(noteDisplayDate(note), {
+    date: "2026-09-01",
+    source: "ファイル名の日付",
+  });
+});
+test("notes without an explicit date use their local modification date", () => {
+  const { noteDisplayDate } = require("../dist/core");
+  const modified = new Date(2026, 8, 22, 12, 0).getTime();
+  const note = parseNote(
+    "file:///plain.md",
+    "# Plain\n[2026-10-20]@ Event",
+    modified,
+  );
+  assert.deepEqual(noteDisplayDate(note), {
+    date: "2026-09-22",
+    source: "更新日",
+  });
+  assert.deepEqual(
+    noteDisplayDate(parseNote("file:///plain.md", "[2026-09-21]", modified)),
+    { date: "2026-09-21", source: "メモ内の日付" },
+  );
+});

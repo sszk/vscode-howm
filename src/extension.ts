@@ -1,5 +1,8 @@
 import * as vscode from "vscode";
 import { Store } from "./storage";
+import { noteTreeItem } from "./notes";
+import { TodoProvider, TodoEntry, TodoNode } from "./todos";
+import { completeReminder } from "./reminders";
 import { Worker } from "node:worker_threads";
 import {
   Note,
@@ -377,19 +380,98 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider<Note>("howm.notes", {
       onDidChangeTreeData: treeChange.event,
       getChildren: () => store.all().slice(0, 200),
-      getTreeItem: (note) => {
-        const item = new vscode.TreeItem(note.title);
-        item.resourceUri = vscode.Uri.parse(note.uri);
-        item.command = {
-          command: "vscode.open",
-          title: "開く",
-          arguments: [item.resourceUri],
-        };
-        item.tooltip = note.uri;
-        return item;
-      },
+      getTreeItem: noteTreeItem,
     }),
   );
+  const todos = new TodoProvider(store);
+  context.subscriptions.push(todos);
+  let todoView: vscode.TreeView<TodoNode> | undefined;
+  let registration: Promise<vscode.TreeView<TodoNode> | undefined> | undefined;
+  const ensureTodoView = async () => {
+    if (todoView) return todoView;
+    if (registration) return registration;
+    registration = (async () => {
+      // An extension-host restart can load new code while the workbench still
+      // has the previous manifest. Register only after the native view exists.
+      const commands = await vscode.commands.getCommands(true);
+      if (!commands.includes("howm.todos.focus")) return undefined;
+      todoView = vscode.window.createTreeView<TodoNode>("howm.todos", {
+        treeDataProvider: todos,
+        showCollapseAll: true,
+      });
+      todos.attach(todoView);
+      context.subscriptions.push(todoView);
+      return todoView;
+    })();
+    try {
+      return await registration;
+    } finally {
+      registration = undefined;
+    }
+  };
+  const offerWindowReload = () => {
+    void vscode.window
+      .showInformationMessage(
+        "howm: Todoビューの登録がまだ反映されていません。Developer: Reload Window（ウィンドウの再読み込み）を実行してください。",
+        "ウィンドウを再読み込み",
+      )
+      .then((choice) =>
+        choice
+          ? vscode.commands.executeCommand("workbench.action.reloadWindow")
+          : undefined,
+      )
+      .then(undefined, (error) => output.appendLine(String(error)));
+  };
+  await ensureTodoView();
+  register("showTodos", async () => {
+    const view = await ensureTodoView();
+    if (!view) {
+      offerWindowReload();
+      return false;
+    }
+    let listener: vscode.Disposable | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const visible = view.visible
+      ? Promise.resolve(true)
+      : new Promise<boolean>((resolve) => {
+          listener = view.onDidChangeVisibility((e) => {
+            if (e.visible) resolve(true);
+          });
+          timer = setTimeout(() => resolve(view.visible), 1000);
+        });
+    try {
+      await vscode.commands.executeCommand("howm.todos.focus");
+      if (!(await visible)) {
+        offerWindowReload();
+        return false;
+      }
+      await todos.refresh();
+      return true;
+    } finally {
+      listener?.dispose();
+      if (timer) clearTimeout(timer);
+    }
+  });
+  register("openReminder", async (entry: TodoEntry) => {
+    if (entry?.type !== "reminder") return;
+    const uri = vscode.Uri.parse(entry.note.uri);
+    if (!store.contains(uri)) return;
+    const doc = await vscode.workspace.openTextDocument(uri);
+    if (doc.getText() !== entry.note.text) {
+      await store.read(uri);
+      todos.update();
+      void vscode.window.showInformationMessage(
+        "メモが変更されています。一覧の更新後にもう一度選択してください。",
+      );
+      return;
+    }
+    await open(entry.note, entry.reminder.line);
+  });
+  register("completeReminder", async (entry: TodoEntry) => {
+    if (entry?.type !== "reminder") return;
+    await completeReminder(store, entry.note, entry.reminder);
+    todos.update();
+  });
   register("configure", configure);
   register("create", async (providedTitle?: string) => {
     const editor = vscode.window.activeTextEditor;
@@ -570,11 +652,8 @@ export async function activate(context: vscode.ExtensionContext) {
       );
       return;
     }
-    const range = new vscode.Range(r.line, r.start, r.line, r.end);
-    const old = e.document.getText(range);
-    await e.edit((b) =>
-      b.replace(range, `[${dateString()}]. ${old.replace("]", "]:")}`),
-    );
+    await completeReminder(store, n, r);
+    todos.update();
   });
   register("changeDate", async () => {
     const e = vscode.window.activeTextEditor;
@@ -613,7 +692,8 @@ export async function activate(context: vscode.ExtensionContext) {
       ["全文検索", "search"],
       ["最近のメモ", "recent"],
       ["メモ一覧", "list"],
-      ["Todoと予定", "reminders"],
+      ["Todoと予定（サイドバー）", "showTodos"],
+      ["Todoと予定（パレット）", "reminders"],
       ["検索履歴", "history"],
       ["ランダムなメモ", "random"],
       ["保存先を選択", "configure"],

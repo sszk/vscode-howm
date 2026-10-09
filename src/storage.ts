@@ -12,6 +12,12 @@ export class Store implements vscode.Disposable {
   readonly onChange = this.events.event;
   private subscriptions: vscode.Disposable[] = [];
   skipped = 0;
+  loading = false;
+  error?: string;
+  private pending?: Promise<void>;
+  private refreshSignature = "";
+  private refreshRequested = false;
+  private disposed = false;
   constructor() {
     this.subscriptions.push(
       vscode.workspace.onDidChangeTextDocument((e) => {
@@ -45,11 +51,51 @@ export class Store implements vscode.Disposable {
     );
     this.events.fire();
   }
-  async initialize() {
+  private configurationSignature() {
+    const config = vscode.workspace.getConfiguration("howm");
+    return JSON.stringify([
+      config.get("notesDirectory"),
+      config.get("maxFileSizeKB"),
+      vscode.workspace.workspaceFolders?.[0]?.uri.toString(),
+    ]);
+  }
+  initialize(): Promise<void> {
+    if (this.disposed) return Promise.resolve();
+    if (this.pending) {
+      if (this.configurationSignature() !== this.refreshSignature)
+        this.refreshRequested = true;
+      return this.pending;
+    }
+    this.loading = true;
+    this.events.fire();
+    this.pending = (async () => {
+      try {
+        do {
+          this.refreshRequested = false;
+          this.refreshSignature = this.configurationSignature();
+          await this.scan();
+        } while (
+          !this.disposed &&
+          (this.refreshRequested ||
+            this.configurationSignature() !== this.refreshSignature)
+        );
+      } catch (error) {
+        this.error = `読み込みに失敗しました: ${String(error)}`;
+        throw error;
+      } finally {
+        this.loading = false;
+        this.pending = undefined;
+        if (!this.disposed) this.events.fire();
+      }
+    })();
+    return this.pending;
+  }
+  private async scan() {
     const generation = ++this.generation;
-    this.watcher?.dispose();
-    this.notes.clear();
-    this.versions.clear();
+    const previousRoot = this.root?.toString();
+    const startingVersions = new Map(this.versions);
+    const seen = new Set<string>();
+    this.error = undefined;
     this.skipped = 0;
     const setting = vscode.workspace
       .getConfiguration("howm")
@@ -70,11 +116,15 @@ export class Store implements vscode.Disposable {
       this.root = workspace
         ? vscode.Uri.joinPath(workspace, setting)
         : undefined;
-    if (!this.root) {
-      this.events.fire();
-      return;
+    if (previousRoot !== this.root?.toString()) {
+      this.watcher?.dispose();
+      this.watcher = undefined;
+      this.notes.clear();
+      this.versions.clear();
     }
+    if (!this.root) return;
     const root = this.root;
+    this.watcher?.dispose();
     this.watcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(root, "**/*"),
     );
@@ -96,7 +146,9 @@ export class Store implements vscode.Disposable {
       let entries: [string, vscode.FileType][];
       try {
         entries = await vscode.workspace.fs.readDirectory(dir);
-      } catch {
+      } catch (error) {
+        if (generation === this.generation)
+          this.error = `保存先を読み込めません: ${String(error)}`;
         return;
       }
       for (const [name, type] of entries) {
@@ -104,15 +156,25 @@ export class Store implements vscode.Disposable {
         if (name.startsWith(".") || name === "node_modules") continue;
         const uri = vscode.Uri.joinPath(dir, name);
         if (type === vscode.FileType.Directory) await walk(uri);
-        else if (type === vscode.FileType.File && /\.md$/i.test(name))
+        else if (type === vscode.FileType.File && /\.md$/i.test(name)) {
+          seen.add(uri.toString());
           await this.read(uri, false);
+        }
       }
     };
     await walk(root);
     if (generation !== this.generation) return;
+    if (!this.error) {
+      for (const key of this.notes.keys()) {
+        if (
+          !seen.has(key) &&
+          this.versions.get(key) === startingVersions.get(key)
+        )
+          this.notes.delete(key);
+      }
+    }
     for (const doc of vscode.workspace.textDocuments)
       if (this.contains(doc.uri) && doc.isDirty) this.overlay(doc);
-    this.events.fire();
   }
   async read(uri: vscode.Uri, notify = true) {
     const generation = this.generation,
@@ -135,8 +197,13 @@ export class Store implements vscode.Disposable {
           .get<number>("maxFileSizeKB", 1024) *
           1024
       ) {
-        this.notes.delete(key);
-        this.skipped++;
+        if (
+          generation === this.generation &&
+          this.versions.get(key) === version
+        ) {
+          this.notes.delete(key);
+          this.skipped++;
+        }
         return;
       }
       const data = await vscode.workspace.fs.readFile(uri);
@@ -146,9 +213,18 @@ export class Store implements vscode.Disposable {
         key,
         parseNote(key, new TextDecoder().decode(data), stat.mtime),
       );
-    } catch {
-      if (generation === this.generation && this.versions.get(key) === version)
-        this.notes.delete(key);
+    } catch (error) {
+      if (
+        generation === this.generation &&
+        this.versions.get(key) === version
+      ) {
+        if (
+          error instanceof vscode.FileSystemError &&
+          error.code === "FileNotFound"
+        )
+          this.notes.delete(key);
+        else this.error = `メモを読み込めません: ${String(error)}`;
+      }
     } finally {
       if (notify) this.events.fire();
     }
@@ -160,6 +236,7 @@ export class Store implements vscode.Disposable {
     return [...new Set(this.all().flatMap((n) => n.keywords))];
   }
   dispose() {
+    this.disposed = true;
     this.generation++;
     this.watcher?.dispose();
     this.events.dispose();

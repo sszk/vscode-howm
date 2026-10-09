@@ -122,6 +122,23 @@ export function parseNote(
     active,
   };
 }
+export function noteDisplayDate(note: Note): { date: string; source: string } {
+  // A standalone timestamp is the note header. Reminder dates and code
+  // examples describe other events, so they must not become the note date.
+  for (const line of note.active) {
+    const stamp =
+      /^\s*\[(\d{4}-\d{2}-\d{2})(?: (?:[01]\d|2[0-3]):[0-5]\d)?\]\s*$/.exec(
+        line,
+      );
+    if (stamp && Number.isFinite(dayNumber(stamp[1])))
+      return { date: stamp[1], source: "メモ内の日付" };
+  }
+  const name = decodeURIComponent(note.uri.split("/").pop() || "");
+  const fromName = /^(\d{4}-\d{2}-\d{2})(?=\D|$)/.exec(name);
+  if (fromName && Number.isFinite(dayNumber(fromName[1])))
+    return { date: fromName[1], source: "ファイル名の日付" };
+  return { date: dateString(new Date(note.modified)), source: "更新日" };
+}
 export function search(notes: Note[], query: string, regex = false): Note[] {
   if (regex && query.length > 256)
     throw new Error("正規表現は256文字以内にしてください");

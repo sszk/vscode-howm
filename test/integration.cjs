@@ -137,6 +137,8 @@ exports.run = async () => {
     assert.equal(vscode.window.activeTextEditor.document.uri.fsPath, freshTodo);
     assert.equal(vscode.window.activeTextEditor.selection.active.line, 1);
 
+    await require("./sidebar-integration.cjs").run(root);
+
     console.log(
       "INTEGRATION PASSED: activation, links, completion, undo, dirty overlay, external edit/delete, reminder picker selection",
     );

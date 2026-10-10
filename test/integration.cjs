@@ -38,17 +38,17 @@ exports.run = async () => {
     const { Store } = require("../dist/storage");
     const store = new Store();
     await store.initialize();
-    assert.equal(store.notes.size, 2);
+    assert.equal(store.noteCount, 2);
     await editor.edit((e) =>
       e.insert(new vscode.Position(3, 0), "未保存の変更\n"),
     );
-    assert.ok(store.notes.get(a.uri.toString()).text.includes("未保存の変更"));
+    assert.ok(store.files.get(a.uri.toString())[0].text.includes("未保存の変更"));
     await fs.writeFile(path.join(root, "b.md"), "# B changed\n検索UI\n");
     await store.read(uri);
-    assert.equal(store.notes.get(uri.toString()).title, "B changed");
+    assert.equal(store.files.get(uri.toString())[0].title, "B changed");
     await fs.unlink(path.join(root, "b.md"));
     await store.read(uri);
-    assert.equal(store.notes.has(uri.toString()), false);
+    assert.equal(store.files.has(uri.toString()), false);
     store.dispose();
     await vscode.commands.executeCommand(
       "workbench.action.revertAndCloseActiveEditor",
@@ -89,7 +89,7 @@ exports.run = async () => {
     for (
       let retry = 0;
       retry < 100 &&
-      !watcherStore.notes.has(
+      !watcherStore.files.has(
         vscode.Uri.file(path.join(root, "todo.md")).toString(),
       );
       retry++
@@ -97,7 +97,7 @@ exports.run = async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     assert.ok(
-      watcherStore.notes.has(
+      watcherStore.files.has(
         vscode.Uri.file(path.join(root, "todo.md")).toString(),
       ),
       "new notes should be indexed automatically by the watcher",
@@ -138,6 +138,7 @@ exports.run = async () => {
     assert.equal(vscode.window.activeTextEditor.selection.active.line, 1);
 
     await require("./sidebar-integration.cjs").run(root);
+    await require("./multi-note-integration.cjs").run(root);
 
     console.log(
       "INTEGRATION PASSED: activation, links, completion, undo, dirty overlay, external edit/delete, reminder picker selection",

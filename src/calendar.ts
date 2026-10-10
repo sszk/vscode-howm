@@ -26,6 +26,8 @@ export class CalendarProvider
   private today = dateString();
   private month = this.today.slice(0, 7);
   private selected = this.today;
+  private renderId = "";
+  private displayedNotes: Note[] = [];
 
   constructor(
     private store: Store,
@@ -71,11 +73,10 @@ export class CalendarProvider
             this.render();
           } else if (
             message?.type === "open" &&
-            typeof message.uri === "string"
+            typeof message.id === "string" &&
+            message.renderId === this.renderId
           ) {
-            const note = calendarDays(this.store.all())
-              .get(this.selected)
-              ?.notes.find((n) => n.uri === message.uri);
+            const note = this.displayedNotes.find((n) => n.id === message.id);
             if (note) await this.open(note);
           }
         } catch (error) {
@@ -124,6 +125,7 @@ export class CalendarProvider
         : ["日", "月", "火", "水", "木", "金", "土"];
     const days = calendarDays(this.store.all());
     const nonce = randomBytes(16).toString("hex");
+    this.renderId = nonce;
     const cells = monthDates(this.month, weekStart)
       .map((date) => {
         if (!date) return '<span aria-hidden="true"></span>';
@@ -141,6 +143,7 @@ export class CalendarProvider
       })
       .join("");
     const notes = days.get(this.selected)?.notes || [];
+    this.displayedNotes = notes;
     const status =
       this.store.error ||
       (this.store.loading
@@ -171,7 +174,7 @@ export class CalendarProvider
       <div class="grid">${weekdays.map((d) => `<span class="weekday">${d}</span>`).join("")}${cells}</div>
       ${status ? `<p role="status">${escape(status)}</p>` : ""}
       <h2>${this.selected} のメモ (${notes.length})</h2>
-      ${notes.length ? notes.map((note) => `<button class="note" data-uri="${escape(note.uri)}">${escape(note.title)}</button>`).join("") : "<p>該当するメモはありません。</p>"}
+      ${notes.length ? notes.map((note) => `<button class="note" data-note-id="${escape(note.id)}">${escape(note.title)}</button>`).join("") : "<p>該当するメモはありません。</p>"}
       <script nonce="${nonce}">
       const vscode=acquireVsCodeApi();
       const state=vscode.getState();
@@ -189,7 +192,7 @@ export class CalendarProvider
         const button=event.target.closest('button');if(!button)return;
         if(button.dataset.date){vscode.setState({focus:button.dataset.date});vscode.postMessage({type:'select',date:button.dataset.date});}
         else if(button.dataset.delta)vscode.postMessage({type:'month',delta:Number(button.dataset.delta)});
-        else if(button.dataset.uri)vscode.postMessage({type:'open',uri:button.dataset.uri});
+        else if(button.dataset.noteId)vscode.postMessage({type:'open',id:button.dataset.noteId,renderId:'${nonce}'});
         else if(button.id==='today')vscode.postMessage({type:'today'});
       });
       </script></body></html>`;

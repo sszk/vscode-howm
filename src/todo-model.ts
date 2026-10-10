@@ -41,7 +41,7 @@ export function todoGroups(notes: Note[], today = dateString()): TodoGroup[] {
       expanded: g.expanded,
       entries: g.rows.map(({ note, r }) => ({
         type: "reminder",
-        id: JSON.stringify([g.id, note.uri, r.line, r.start]),
+        id: JSON.stringify([g.id, note.id, r.line, r.start]),
         note,
         reminder: r,
       })),

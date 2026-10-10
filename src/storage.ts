@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as os from "os";
-import { Note, parseNote } from "./core";
+import { Note, parseNotes } from "./core";
 export class Store implements vscode.Disposable {
-  notes = new Map<string, Note>();
+  files = new Map<string, Note[]>();
   root?: vscode.Uri;
   private watcher?: vscode.FileSystemWatcher;
   private generation = 0;
@@ -45,9 +45,9 @@ export class Store implements vscode.Disposable {
       doc.uri.toString(),
       (this.versions.get(doc.uri.toString()) || 0) + 1,
     );
-    this.notes.set(
+    this.files.set(
       doc.uri.toString(),
-      parseNote(doc.uri.toString(), doc.getText()),
+      parseNotes(doc.uri.toString(), doc.getText()),
     );
     this.events.fire();
   }
@@ -119,7 +119,7 @@ export class Store implements vscode.Disposable {
     if (previousRoot !== this.root?.toString()) {
       this.watcher?.dispose();
       this.watcher = undefined;
-      this.notes.clear();
+      this.files.clear();
       this.versions.clear();
     }
     if (!this.root) return;
@@ -135,10 +135,10 @@ export class Store implements vscode.Disposable {
       if (this.contains(uri)) void this.read(uri);
     });
     this.watcher.onDidDelete((uri) => {
-      for (const key of this.notes.keys())
+      for (const key of this.files.keys())
         if (key === uri.toString() || key.startsWith(uri.toString() + "/")) {
           this.versions.set(key, (this.versions.get(key) || 0) + 1);
-          this.notes.delete(key);
+          this.files.delete(key);
         }
       this.events.fire();
     });
@@ -165,12 +165,12 @@ export class Store implements vscode.Disposable {
     await walk(root);
     if (generation !== this.generation) return;
     if (!this.error) {
-      for (const key of this.notes.keys()) {
+      for (const key of this.files.keys()) {
         if (
           !seen.has(key) &&
           this.versions.get(key) === startingVersions.get(key)
         )
-          this.notes.delete(key);
+          this.files.delete(key);
       }
     }
     for (const doc of vscode.workspace.textDocuments)
@@ -201,7 +201,7 @@ export class Store implements vscode.Disposable {
           generation === this.generation &&
           this.versions.get(key) === version
         ) {
-          this.notes.delete(key);
+          this.files.delete(key);
           this.skipped++;
         }
         return;
@@ -209,9 +209,9 @@ export class Store implements vscode.Disposable {
       const data = await vscode.workspace.fs.readFile(uri);
       if (generation !== this.generation || this.versions.get(key) !== version)
         return;
-      this.notes.set(
+      this.files.set(
         key,
-        parseNote(key, new TextDecoder().decode(data), stat.mtime),
+        parseNotes(key, new TextDecoder().decode(data), stat.mtime),
       );
     } catch (error) {
       if (
@@ -222,7 +222,7 @@ export class Store implements vscode.Disposable {
           error instanceof vscode.FileSystemError &&
           error.code === "FileNotFound"
         )
-          this.notes.delete(key);
+          this.files.delete(key);
         else this.error = `メモを読み込めません: ${String(error)}`;
       }
     } finally {
@@ -230,7 +230,20 @@ export class Store implements vscode.Disposable {
     }
   }
   all() {
-    return [...this.notes.values()].sort((a, b) => b.modified - a.modified);
+    return [...this.files.values()]
+      .flat()
+      .sort(
+        (a, b) =>
+          b.modified - a.modified ||
+          a.uri.localeCompare(b.uri) ||
+          a.startLine - b.startLine,
+      );
+  }
+  get noteCount() {
+    return [...this.files.values()].reduce(
+      (count, notes) => count + notes.length,
+      0,
+    );
   }
   keywords() {
     return [...new Set(this.all().flatMap((n) => n.keywords))];

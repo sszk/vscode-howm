@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Note, Reminder, dateString, parseNote } from "./core";
+import { Note, Reminder, dateString, parseNotes } from "./core";
 import { Store } from "./storage";
 
 // Use the same edit for sidebar completion and the current-line command.
@@ -25,8 +25,8 @@ export async function completeReminder(
     ? undefined
     : new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
   if (
-    doc.getText() !== note.text ||
-    (diskText !== undefined && diskText !== note.text)
+    doc.getText() !== note.source.text ||
+    (diskText !== undefined && diskText !== note.source.text)
   ) {
     await store.read(uri);
     void vscode.window.showInformationMessage(
@@ -34,14 +34,16 @@ export async function completeReminder(
     );
     return false;
   }
-  const current = parseNote(note.uri, doc.getText()).reminders.find(
-    (r) =>
-      r.line === reminder.line &&
-      r.start === reminder.start &&
-      r.end === reminder.end &&
-      r.kind === reminder.kind &&
-      r.kind !== ".",
-  );
+  const current = parseNotes(note.uri, doc.getText())
+    .find((n) => n.id === note.id)
+    ?.reminders.find(
+      (r) =>
+        r.line === reminder.line &&
+        r.start === reminder.start &&
+        r.end === reminder.end &&
+        r.kind === reminder.kind &&
+        r.kind !== ".",
+    );
   if (!current) return false;
   const range = new vscode.Range(
     current.line,

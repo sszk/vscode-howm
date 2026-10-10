@@ -85,7 +85,7 @@ exports.run = async (base) => {
     assert.equal(memoItem.label, "Dated note");
     assert.equal(memoItem.description, "2026-09-21");
     assert.ok(memoItem.tooltip.includes("メモ内の日付: 2026-09-21"));
-    assert.equal(memoItem.command.command, "vscode.open");
+    assert.equal(memoItem.command.command, "howm.openNote");
     assert.equal(memoItem.resourceUri.toString(), workUri.toString());
     const groups = provider.getChildren();
     assert.equal(

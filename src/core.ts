@@ -14,7 +14,15 @@ export interface Link {
   target: string;
   declaration: boolean;
 }
+export interface NoteSource {
+  text: string;
+  modified: number;
+}
 export interface Note {
+  id: string;
+  source: NoteSource;
+  startLine: number;
+  endLine: number; // Exclusive, in the original file.
   uri: string;
   title: string;
   text: string;
@@ -40,20 +48,10 @@ export function dayNumber(value: string): number {
     ? date.getTime() / 86400000
     : NaN;
 }
-export function parseNote(
-  uri: string,
-  text: string,
-  modified = Date.now(),
-): Note {
-  const lines = text.split(/\r?\n/);
-  const active: string[] = [];
+function activeLines(lines: string[]): string[] {
   let fence = "",
-    fenceLength = 0,
-    title = "";
-  const links: Link[] = [],
-    reminders: Reminder[] = [],
-    keywords: string[] = [];
-  lines.forEach((line, i) => {
+    fenceLength = 0;
+  return lines.map((line) => {
     const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
     if (fence) {
       if (
@@ -63,64 +61,104 @@ export function parseNote(
         !marker[2].trim()
       )
         fence = "";
-      active.push("");
-      return;
+      return "";
     }
     if (marker) {
       fence = marker[1][0];
       fenceLength = marker[1].length;
-      active.push("");
-      return;
+      return "";
     }
-    if (/^( {4}|\t)/.test(line)) {
-      active.push("");
-      return;
-    }
-    const plain = line.replace(/(`+).*?\1/g, (match) =>
-      " ".repeat(match.length),
-    );
-    active.push(plain);
-    const heading = /^#\s+(.+?)\s*#*\s*$/.exec(plain);
-    if (!title && heading) title = heading[1];
-    const link = /^\s*(<<<|>>>)\s+(.+?)\s*$/.exec(plain);
-    if (link) {
-      links.push({
-        line: i,
-        start: line.indexOf(link[1]),
-        end: line.trimEnd().length,
-        target: link[2],
-        declaration: link[1] === "<<<",
-      });
-      if (link[1] === "<<<") keywords.push(link[2]);
-    }
-    const re = /\[(\d{4}-\d{2}-\d{2})(?: \d{2}:\d{2})?\]([@+!~.\-])(\d*)/g;
-    for (const m of plain.matchAll(re)) {
-      if (!Number.isFinite(dayNumber(m[1]))) continue;
-      reminders.push({
-        line: i,
-        start: m.index!,
-        end: m.index! + m[0].length,
-        date: m[1],
-        kind: m[2],
-        days: Math.max(
-          1,
-          Number(m[3]) || (m[2] === "~" ? 30 : m[2] === "-" ? 1 : 7),
-        ),
-        text: line.slice(m.index! + m[0].length).trim(),
-      });
-    }
+    if (/^( {4}|\t)/.test(line)) return "";
+    return line.replace(/(`+).*?\1/g, (match) => " ".repeat(match.length));
   });
-  return {
-    uri,
-    title: title || decodeURIComponent(uri.split("/").pop() || "Untitled"),
-    text,
-    modified,
-    keywords: [...new Set(keywords)],
-    links,
-    reminders,
-    lines,
-    active,
-  };
+}
+function headingTitle(line: string): string | undefined {
+  const heading = /^ {0,3}#(?:[ \t]+|$)(.*)$/.exec(line);
+  return heading?.[1].replace(/(?:^|[ \t]+)#+[ \t]*$/, "").trim();
+}
+export function parseNotes(
+  uri: string,
+  text: string,
+  modified = Date.now(),
+): Note[] {
+  const source = { text, modified };
+  const lines = text.split(/\r?\n/);
+  const active = activeLines(lines);
+  const offsets = [0];
+  for (const match of text.matchAll(/\n/g)) offsets.push(match.index! + 1);
+  const starts: number[] = [];
+  active.forEach((line, i) => {
+    if (line && headingTitle(lines[i]) !== undefined) starts.push(i);
+  });
+  // Heading-less files remain one note. Otherwise discard the preamble.
+  if (!starts.length) starts.push(0);
+  return starts.map((startLine, index) => {
+    const endLine = starts[index + 1] ?? lines.length;
+    const noteLines = lines.slice(startLine, endLine);
+    const noteActive = active.slice(startLine, endLine);
+    const links: Link[] = [],
+      reminders: Reminder[] = [],
+      keywords: string[] = [];
+    noteActive.forEach((plain, localLine) => {
+      const line = noteLines[localLine];
+      const absoluteLine = startLine + localLine;
+      const link = /^\s*(<<<|>>>)\s+(.+?)\s*$/.exec(plain);
+      if (link) {
+        links.push({
+          line: absoluteLine,
+          start: line.indexOf(link[1]),
+          end: line.trimEnd().length,
+          target: link[2],
+          declaration: link[1] === "<<<",
+        });
+        if (link[1] === "<<<") keywords.push(link[2]);
+      }
+      const re = /\[(\d{4}-\d{2}-\d{2})(?: \d{2}:\d{2})?\]([@+!~.\-])(\d*)/g;
+      for (const m of plain.matchAll(re)) {
+        if (!Number.isFinite(dayNumber(m[1]))) continue;
+        reminders.push({
+          line: absoluteLine,
+          start: m.index!,
+          end: m.index! + m[0].length,
+          date: m[1],
+          kind: m[2],
+          days: Math.max(
+            1,
+            Number(m[3]) || (m[2] === "~" ? 30 : m[2] === "-" ? 1 : 7),
+          ),
+          text: line.slice(m.index! + m[0].length).trim(),
+        });
+      }
+    });
+    return {
+      id: JSON.stringify([uri, startLine]),
+      uri,
+      source,
+      startLine,
+      endLine,
+      title:
+        headingTitle(noteLines[0]) ||
+        decodeURIComponent(uri.split("/").pop() || "Untitled"),
+      text: text.slice(offsets[startLine], offsets[endLine] ?? text.length),
+      modified,
+      keywords: [...new Set(keywords)],
+      links,
+      reminders,
+      lines: noteLines,
+      active: noteActive,
+    };
+  });
+}
+// Convenience for callers dealing with a single-note file.
+export function parseNote(
+  uri: string,
+  text: string,
+  modified = Date.now(),
+): Note {
+  return parseNotes(uri, text, modified)[0];
+}
+export function noteAtLine(notes: Note[], line: number): Note | undefined {
+  return notes.find((note) => line >= note.startLine && line < note.endLine);
 }
 export function noteDisplayDate(note: Note): { date: string; source: string } {
   // A standalone timestamp is the note header. Reminder dates and code
@@ -158,7 +196,8 @@ export function search(notes: Note[], query: string, regex = false): Note[] {
       return (
         rank(b) - rank(a) ||
         b.modified - a.modified ||
-        a.uri.localeCompare(b.uri)
+        a.uri.localeCompare(b.uri) ||
+        a.startLine - b.startLine
       );
     });
 }
@@ -168,7 +207,7 @@ export function keywordLinks(note: Note, keywords: string[]): Link[] {
     .filter(Boolean)
     .sort((a, b) => b.length - a.length);
   note.active.forEach((line, i) => {
-    if (note.links.some((l) => l.line === i)) return;
+    if (note.links.some((l) => l.line === note.startLine + i)) return;
     const occupied: [number, number][] = [];
     for (const m of line.matchAll(/!?\[[^\]]*\]\([^)]*\)|<[^>]*>/g))
       occupied.push([m.index!, m.index! + m[0].length]);
@@ -178,7 +217,7 @@ export function keywordLinks(note: Note, keywords: string[]): Link[] {
         const end = at + keyword.length;
         if (!occupied.some(([s, e]) => at < e && end > s)) {
           result.push({
-            line: i,
+            line: note.startLine + i,
             start: at,
             end,
             target: keyword,
@@ -191,6 +230,20 @@ export function keywordLinks(note: Note, keywords: string[]): Link[] {
     }
   });
   return result;
+}
+export function relatedNotes(
+  note: Note,
+  notes: Note[],
+  keywords: string[],
+): Note[] {
+  const terms = [
+    ...note.keywords,
+    ...keywordLinks(note, keywords).map((link) => link.target),
+  ];
+  return notes.filter(
+    (other) =>
+      other.id !== note.id && terms.some((term) => other.text.includes(term)),
+  );
 }
 // Original scoring policy inspired by howm, not byte-for-byte Emacs ordering.
 export function priority(r: Reminder, today = dateString()): number {

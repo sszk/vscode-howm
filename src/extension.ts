@@ -4,12 +4,15 @@ import { CalendarProvider } from "./calendar";
 import { noteTreeItem } from "./notes";
 import { TodoProvider, TodoEntry, TodoNode } from "./todos";
 import { completeReminder } from "./reminders";
-import { Worker } from "node:worker_threads";
+import { openNote } from "./navigation";
+import { regexSearch } from "./search";
 import {
   Note,
   search,
   keywordLinks,
-  parseNote,
+  parseNotes,
+  noteAtLine,
+  relatedNotes,
   dateString,
   dayNumber,
   reminderList,
@@ -39,11 +42,9 @@ export async function activate(context: vscode.ExtensionContext) {
         },
       ),
     );
-  const open = async (note: Note, line = 0, preview = false) =>
-    vscode.window.showTextDocument(vscode.Uri.parse(note.uri), {
-      preview,
-      selection: new vscode.Range(line, 0, line, 0),
-    });
+  const open = (note: Note, line = note.startLine, preview = false) =>
+    openNote(store, note, line, preview);
+  register("openNote", (note: Note) => (note?.id ? open(note) : undefined));
   const configure = async () => {
     const chosen = await vscode.window.showOpenDialog({
       canSelectFolders: true,
@@ -128,7 +129,7 @@ export async function activate(context: vscode.ExtensionContext) {
       { label: "$(book) すべて連結して読む", concat: true },
       ...notes.map((note) => ({
         label: note.title,
-        description: vscode.Uri.parse(note.uri).path,
+        description: `${vscode.Uri.parse(note.uri).path}:${note.startLine + 1}`,
         detail: note.lines
           .find((l) => l.trim() && !l.startsWith("#"))
           ?.slice(0, 180),
@@ -144,7 +145,7 @@ export async function activate(context: vscode.ExtensionContext) {
         if (note)
           previewQueue = previewQueue
             .then(async () => {
-              await open(note, 0, true);
+              await open(note, note.startLine, true);
             })
             .catch(() => {});
       }),
@@ -177,7 +178,11 @@ export async function activate(context: vscode.ExtensionContext) {
   }
   const virtual = new Map<
     string,
-    { text: string; links: { range: vscode.Range; uri: vscode.Uri }[] }
+    {
+      text: string;
+      links: { range: vscode.Range; uri: vscode.Uri }[];
+      notes: Note[];
+    }
   >();
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider("howm", {
@@ -190,6 +195,11 @@ export async function activate(context: vscode.ExtensionContext) {
       if (doc.uri.scheme === "howm") virtual.delete(doc.uri.toString());
     }),
   );
+  register("openVirtualNote", (uri: string, index: number) => {
+    if (!Number.isInteger(index)) return;
+    const note = virtual.get(uri)?.notes[index];
+    return note ? open(note) : undefined;
+  });
   let virtualId = 0;
   async function concatenate(notes = lastResults) {
     if (!notes.length) {
@@ -200,13 +210,16 @@ export async function activate(context: vscode.ExtensionContext) {
     }
     const lines = ["# howm — 連結表示", ""];
     const links: { range: vscode.Range; uri: vscode.Uri }[] = [];
-    for (const note of notes) {
-      const uri = vscode.Uri.parse(note.uri);
+    const uri = vscode.Uri.parse(`howm:/reading-${++virtualId}.md`);
+    for (const [index, note] of notes.entries()) {
+      const target = vscode.Uri.parse(
+        `command:howm.openVirtualNote?${encodeURIComponent(JSON.stringify([uri.toString(), index]))}`,
+      );
       const line = lines.length;
       lines.push(`元のメモを開く: ${note.title}`, "", note.text, "", "---", "");
       links.push({
         range: new vscode.Range(line, 0, line, lines[line].length),
-        uri,
+        uri: target,
       });
     }
     // Count embedded newlines when computing source navigation ranges.
@@ -220,40 +233,11 @@ export async function activate(context: vscode.ExtensionContext) {
       );
       offset += 6 + notes[i].text.split("\n").length - 1;
     }
-    const uri = vscode.Uri.parse(`howm:/reading-${++virtualId}.md`);
-    virtual.set(uri.toString(), { text: lines.join("\n"), links });
+    virtual.set(uri.toString(), { text: lines.join("\n"), links, notes });
     await vscode.window.showTextDocument(
       await vscode.workspace.openTextDocument(uri),
       { preview: false },
     );
-  }
-  async function regexSearch(notes: Note[], query: string): Promise<Note[]> {
-    return new Promise((resolve, reject) => {
-      const worker = new Worker(
-        `const {parentPort,workerData}=require('node:worker_threads');try{const {search}=require(workerData.core);parentPort.postMessage({uris:search(workerData.notes,workerData.query,true).map(n=>n.uri)});}catch(e){parentPort.postMessage({error:e.message});}`,
-        {
-          eval: true,
-          workerData: { core: require.resolve("./core"), notes, query },
-        },
-      );
-      const timer = setTimeout(() => {
-        void worker.terminate();
-        reject(new Error("正規表現検索が時間制限（2秒）を超えました"));
-      }, 2000);
-      worker.once("message", (message) => {
-        clearTimeout(timer);
-        void worker.terminate();
-        if (message.error) reject(new Error(message.error));
-        else {
-          const map = new Map(notes.map((n) => [n.uri, n]));
-          resolve(message.uris.map((uri: string) => map.get(uri)!));
-        }
-      });
-      worker.once("error", (error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-    });
   }
   async function doSearch(query?: string, regex = false) {
     query =
@@ -316,18 +300,19 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerDocumentLinkProvider(selector, {
       provideDocumentLinks(doc) {
         if (!store.contains(doc.uri)) return [];
-        const note = parseNote(doc.uri.toString(), doc.getText());
-        return keywordLinks(note, store.keywords()).map((link) => {
-          const uri = vscode.Uri.parse(
-            `command:howm.openLink?${encodeURIComponent(JSON.stringify([link.target, note.uri]))}`,
-          );
-          const result = new vscode.DocumentLink(
-            new vscode.Range(link.line, link.start, link.line, link.end),
-            uri,
-          );
-          result.tooltip = `howm: ${link.target}`;
-          return result;
-        });
+        return parseNotes(doc.uri.toString(), doc.getText()).flatMap((note) =>
+          keywordLinks(note, store.keywords()).map((link) => {
+            const uri = vscode.Uri.parse(
+              `command:howm.openLink?${encodeURIComponent(JSON.stringify([link.target, note.uri]))}`,
+            );
+            const result = new vscode.DocumentLink(
+              new vscode.Range(link.line, link.start, link.line, link.end),
+              uri,
+            );
+            result.tooltip = `howm: ${link.target}`;
+            return result;
+          }),
+        );
       },
     }),
   );
@@ -350,6 +335,15 @@ export async function activate(context: vscode.ExtensionContext) {
           if (
             !store.contains(doc.uri) ||
             !/^\s*(>>>|<<<)\s/.test(doc.lineAt(pos).text)
+          )
+            return [];
+          const note = noteAtLine(
+            parseNotes(doc.uri.toString(), doc.getText()),
+            pos.line,
+          );
+          if (
+            !note ||
+            !/^\s*(>>>|<<<)\s/.test(note.active[pos.line - note.startLine])
           )
             return [];
           const prefix = doc.lineAt(pos).text.slice(0, pos.character);
@@ -460,17 +454,6 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   register("openReminder", async (entry: TodoEntry) => {
     if (entry?.type !== "reminder") return;
-    const uri = vscode.Uri.parse(entry.note.uri);
-    if (!store.contains(uri)) return;
-    const doc = await vscode.workspace.openTextDocument(uri);
-    if (doc.getText() !== entry.note.text) {
-      await store.read(uri);
-      todos.update();
-      void vscode.window.showInformationMessage(
-        "メモが変更されています。一覧の更新後にもう一度選択してください。",
-      );
-      return;
-    }
     await open(entry.note, entry.reminder.line);
   });
   register("completeReminder", async (entry: TodoEntry) => {
@@ -495,18 +478,22 @@ export async function activate(context: vscode.ExtensionContext) {
     if (body) await create("", body);
   });
   register("search", (q?: string) => doSearch(q));
-  register("searchRegex", () => doSearch(undefined, true));
+  register("searchRegex", (q?: string) => doSearch(q, true));
   register("list", () => pickNotes(store.all(), "howm: メモ一覧"));
   register("recent", () =>
     pickNotes(store.all().slice(0, 50), "howm: 最近の50件"),
   );
   register("openLink", (target: string, uri: string) =>
-    follow(target, store.notes.get(uri)),
+    follow(target, store.files.get(uri)?.[0]),
   );
   register("follow", async () => {
     const e = vscode.window.activeTextEditor;
     if (!e || !store.contains(e.document.uri)) return;
-    const n = parseNote(e.document.uri.toString(), e.document.getText());
+    const n = noteAtLine(
+      parseNotes(e.document.uri.toString(), e.document.getText()),
+      e.selection.active.line,
+    );
+    if (!n) return;
     const link = keywordLinks(n, store.keywords()).find(
       (l) =>
         l.line === e.selection.active.line &&
@@ -522,17 +509,12 @@ export async function activate(context: vscode.ExtensionContext) {
   register("related", async () => {
     const e = vscode.window.activeTextEditor;
     if (!e || !store.contains(e.document.uri)) return;
-    const n = parseNote(e.document.uri.toString(), e.document.getText());
-    const terms = [
-      ...n.keywords,
-      ...keywordLinks(n, store.keywords()).map((l) => l.target),
-    ];
-    const candidates = store
-      .all()
-      .filter(
-        (other) =>
-          other.uri !== n.uri && terms.some((k) => other.text.includes(k)),
-      );
+    const n = noteAtLine(
+      parseNotes(e.document.uri.toString(), e.document.getText()),
+      e.selection.active.line,
+    );
+    if (!n) return;
+    const candidates = relatedNotes(n, store.all(), store.keywords());
     await pickNotes(candidates, "howm: 関連メモ");
   });
   register("concatenate", () => concatenate());
@@ -602,7 +584,7 @@ export async function activate(context: vscode.ExtensionContext) {
         ...schedule.map(row),
       );
     if (!items.length) {
-      const reason = !store.notes.size
+      const reason = !store.noteCount
         ? "対象のMarkdownメモが読み込まれていません。保存先を確認してください。"
         : !all.length
           ? "リマインダが見つかりません。本文に [YYYY-MM-DD]+ 内容 のように記述してください（コードブロック内は対象外）。"
@@ -634,7 +616,7 @@ export async function activate(context: vscode.ExtensionContext) {
       },
     );
     const chosen = await vscode.window.showQuickPick(items, {
-      title: `howm: Todoと予定 — ${today} / メモ${store.notes.size}件 / リマインダ${all.length}件`,
+      title: `howm: Todoと予定 — ${today} / メモ${store.noteCount}件 / リマインダ${all.length}件`,
       matchOnDescription: true,
       placeHolder:
         "選択すると元の行へ移動。完了は howm: この行のリマインダを完了",
@@ -648,7 +630,11 @@ export async function activate(context: vscode.ExtensionContext) {
   register("complete", async () => {
     const e = vscode.window.activeTextEditor;
     if (!e || !store.contains(e.document.uri)) return;
-    const n = parseNote(e.document.uri.toString(), e.document.getText());
+    const n = noteAtLine(
+      parseNotes(e.document.uri.toString(), e.document.getText()),
+      e.selection.active.line,
+    );
+    if (!n) return;
     const r = n.reminders.find(
       (r) => r.line === e.selection.active.line && r.kind !== ".",
     );
@@ -665,8 +651,12 @@ export async function activate(context: vscode.ExtensionContext) {
     const e = vscode.window.activeTextEditor;
     if (!e || !store.contains(e.document.uri)) return;
     const line = e.selection.active.line;
-    const n = parseNote(e.document.uri.toString(), e.document.getText());
-    const m = /\[(\d{4}-\d{2}-\d{2})/.exec(n.active[line]);
+    const n = noteAtLine(
+      parseNotes(e.document.uri.toString(), e.document.getText()),
+      e.selection.active.line,
+    );
+    if (!n) return;
+    const m = /\[(\d{4}-\d{2}-\d{2})/.exec(n.active[line - n.startLine]);
     if (!m) return;
     const version = e.document.version;
     const value = await vscode.window.showInputBox({
@@ -688,7 +678,7 @@ export async function activate(context: vscode.ExtensionContext) {
   register("refresh", async () => {
     await store.initialize();
     void vscode.window.showInformationMessage(
-      `howm: ${store.notes.size}件を索引化${store.skipped ? `（サイズ超過 ${store.skipped}件）` : ""}`,
+      `howm: ${store.noteCount}件を索引化${store.skipped ? `（サイズ超過 ${store.skipped}件）` : ""}`,
     );
   });
   register("home", async () => {
@@ -706,7 +696,7 @@ export async function activate(context: vscode.ExtensionContext) {
     ];
     const chosen = await vscode.window.showQuickPick(
       choices.map(([label, command]) => ({ label, command })),
-      { title: `howm — ${store.notes.size} notes` },
+      { title: `howm — ${store.noteCount} notes` },
     );
     if (chosen) await vscode.commands.executeCommand(`howm.${chosen.command}`);
   });

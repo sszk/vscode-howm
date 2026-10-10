@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -112,6 +112,11 @@
         "command": "howm.completeReminder",
         "title": "howm: リマインダを完了",
         "icon": "$(check)"
+      },
+      {
+        "command": "howm.focusNotesSearch",
+        "title": "howm: メモ一覧で検索",
+        "icon": "$(search)"
       }
     ],
     "keybindings": [
@@ -139,7 +144,8 @@
         },
         {
           "id": "howm.notes",
-          "name": "メモ一覧"
+          "name": "メモ一覧",
+          "type": "webview"
         }
       ]
     },
@@ -151,7 +157,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "howm.search",
+          "command": "howm.focusNotesSearch",
           "when": "view == howm.notes",
           "group": "navigation@2"
         },

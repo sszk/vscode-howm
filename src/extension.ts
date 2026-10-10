@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { Store } from "./storage";
 import { CalendarProvider } from "./calendar";
 import { noteTreeItem } from "./notes";
+import { NotesViewProvider } from "./notes-view";
 import { TodoProvider, TodoEntry, TodoNode } from "./todos";
 import { completeReminder } from "./reminders";
 import { openNote } from "./navigation";
@@ -366,18 +367,47 @@ export async function activate(context: vscode.ExtensionContext) {
       " ",
     ),
   );
-  const treeChange = new vscode.EventEmitter<void>();
-  context.subscriptions.push(
-    treeChange,
-    store.onChange(() => treeChange.fire()),
-  );
-  context.subscriptions.push(
-    vscode.window.registerTreeDataProvider<Note>("howm.notes", {
-      onDidChangeTreeData: treeChange.event,
-      getChildren: () => store.all().slice(0, 200),
-      getTreeItem: noteTreeItem,
-    }),
-  );
+  let notesView: NotesViewProvider | undefined;
+  const contributedViews = context.extension.packageJSON.contributes?.views as
+    Record<string, { id: string; type?: string }[]> | undefined;
+  const notesWebview = Object.values(contributedViews || {})
+    .flat()
+    .some((view) => view.id === "howm.notes" && view.type === "webview");
+  if (notesWebview) {
+    notesView = new NotesViewProvider(store, (note, selection) =>
+      openNote(store, note, note.startLine, false, selection),
+    );
+    context.subscriptions.push(
+      notesView,
+      vscode.window.registerWebviewViewProvider("howm.notes", notesView),
+    );
+  } else {
+    // Retain the tree when testing/running against an older manifest.
+    const treeChange = new vscode.EventEmitter<void>();
+    context.subscriptions.push(
+      treeChange,
+      store.onChange(() => treeChange.fire()),
+      vscode.window.registerTreeDataProvider<Note>("howm.notes", {
+        onDidChangeTreeData: treeChange.event,
+        getChildren: () => store.all().slice(0, 200),
+        getTreeItem: noteTreeItem,
+      }),
+    );
+  }
+  register("focusNotesSearch", async () => {
+    if (notesView && (await notesView.focusSearch())) return true;
+    void vscode.window
+      .showInformationMessage(
+        "howm: メモ一覧の新しい表示形式を反映するため、Developer: Reload Window（ウィンドウの再読み込み）を実行してください。",
+        "ウィンドウを再読み込み",
+      )
+      .then((choice) =>
+        choice
+          ? vscode.commands.executeCommand("workbench.action.reloadWindow")
+          : undefined,
+      );
+    return false;
+  });
   const calendar = new CalendarProvider(store, (note) => open(note));
   context.subscriptions.push(
     calendar,

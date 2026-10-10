@@ -23,6 +23,11 @@ exports.run = async () => {
     commands.includes("howm.reminders"),
     "the existing reminder picker should remain available",
   );
+  assert.equal(
+    await vscode.commands.executeCommand("howm.focusNotesSearch"),
+    false,
+    "an older tree manifest must give a reload hint for the search view",
+  );
   console.log(
     "MISSING VIEW PASSED: new extension code with an old manifest activates safely and returns a reload hint",
   );

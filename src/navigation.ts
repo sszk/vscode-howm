@@ -7,6 +7,7 @@ export async function openNote(
   note: Note,
   line = note.startLine,
   preview = false,
+  selection?: vscode.Range,
 ): Promise<vscode.TextEditor | undefined> {
   const uri = vscode.Uri.parse(note.uri);
   if (!store.contains(uri)) return;
@@ -33,8 +34,14 @@ export async function openNote(
     );
     return;
   }
-  return vscode.window.showTextDocument(doc, {
+  const range = selection ?? new vscode.Range(line, 0, line, 0);
+  const editor = await vscode.window.showTextDocument(doc, {
     preview,
-    selection: new vscode.Range(line, 0, line, 0),
+    selection: range,
   });
+  editor.revealRange(
+    range,
+    vscode.TextEditorRevealType.InCenterIfOutsideViewport,
+  );
+  return editor;
 }

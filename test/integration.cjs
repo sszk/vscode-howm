@@ -139,6 +139,7 @@ exports.run = async () => {
 
     await require("./sidebar-integration.cjs").run(root);
     await require("./multi-note-integration.cjs").run(root);
+    await require("./notes-search-integration.cjs").run(root);
 
     console.log(
       "INTEGRATION PASSED: activation, links, completion, undo, dirty overlay, external edit/delete, reminder picker selection",

@@ -152,24 +152,23 @@ export class CalendarProvider
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
       <style nonce="${nonce}">
-      body{padding:10px;color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:var(--vscode-font-size)}
+      body{margin:0;padding:6px 10px;color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:var(--vscode-font-size)}
       button{font:inherit;color:inherit;background:transparent;border:1px solid transparent;cursor:pointer;border-radius:3px}
       button:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:1px}
-      header{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:12px}
-      .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
-      .weekday{font-size:11px;color:var(--vscode-descriptionForeground)}
-      .day{position:relative;padding:5px 0;min-width:0}.dot{display:block;font-size:10px;line-height:10px}
+      header{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:6px}
+      .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px 3px;text-align:center}
+      .weekday{font-size:11px;line-height:16px;color:var(--vscode-descriptionForeground)}
+      .day{position:relative;box-sizing:border-box;padding:3px 0;min-width:0;min-height:28px;line-height:20px}.dot{position:absolute;right:3px;bottom:1px;font-size:9px;line-height:10px}
       .todo{background:var(--vscode-button-background);color:var(--vscode-button-foreground)}
       .today{border-color:var(--vscode-focusBorder)}.selected{outline:2px solid var(--vscode-focusBorder);outline-offset:0}
       .tooltip{display:none;position:absolute;z-index:10;top:100%;left:0;width:max-content;max-width:200px;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;padding:8px;background:var(--vscode-editorHoverWidget-background);color:var(--vscode-editorHoverWidget-foreground);border:1px solid var(--vscode-editorHoverWidget-border);box-shadow:0 2px 8px var(--vscode-widget-shadow);pointer-events:none}
       .day:nth-child(7n+5) .tooltip,.day:nth-child(7n+6) .tooltip,.day:nth-child(7n) .tooltip{left:auto;right:0}
       .day:hover .tooltip,.day:focus-visible .tooltip{display:block}
-      h2{font-size:inherit;margin:18px 0 8px}.note{display:block;text-align:left;width:100%;padding:6px;overflow-wrap:anywhere}.note:hover{background:var(--vscode-list-hoverBackground)}
-      p{color:var(--vscode-descriptionForeground)}
+      h2{font-size:inherit;margin:10px 0 4px}.note{display:block;text-align:left;width:100%;padding:4px 6px;overflow-wrap:anywhere}.note:hover{background:var(--vscode-list-hoverBackground)}
+      p{margin:6px 0;color:var(--vscode-descriptionForeground)}
       </style></head><body>
       <header><button data-delta="-1" aria-label="前月">‹</button><strong>${this.month.replace("-", "年")}月</strong><button data-delta="1" aria-label="翌月">›</button><button id="today">今日</button></header>
       <div class="grid">${weekdays.map((d) => `<span class="weekday">${d}</span>`).join("")}${cells}</div>
-      <p>● メモあり · 反転：未完了のTodo・予定</p>
       ${status ? `<p role="status">${escape(status)}</p>` : ""}
       <h2>${this.selected} のメモ (${notes.length})</h2>
       ${notes.length ? notes.map((note) => `<button class="note" data-uri="${escape(note.uri)}">${escape(note.title)}</button>`).join("") : "<p>該当するメモはありません。</p>"}

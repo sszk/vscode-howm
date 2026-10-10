@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.2.3",
+  "version": "0.2.6",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -129,6 +129,11 @@
     "views": {
       "howm": [
         {
+          "id": "howm.calendar",
+          "name": "カレンダー",
+          "type": "webview"
+        },
+        {
           "id": "howm.todos",
           "name": "Todoと予定"
         },
@@ -203,6 +208,19 @@
           "default": 1024,
           "minimum": 1,
           "description": "索引に含めるMarkdownファイルの最大サイズ(KB)。"
+        },
+        "howm.calendarWeekStart": {
+          "type": "string",
+          "enum": [
+            "sunday",
+            "monday"
+          ],
+          "enumDescriptions": [
+            "日曜始まり（日・月・火・水・木・金・土）",
+            "月曜始まり（月・火・水・木・金・土・日）"
+          ],
+          "default": "sunday",
+          "description": "カレンダーの週の開始日。変更すると表示中のカレンダーにも即座に反映します。"
         }
       }
     },

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { Store } from "./storage";
+import { CalendarProvider } from "./calendar";
 import { noteTreeItem } from "./notes";
 import { TodoProvider, TodoEntry, TodoNode } from "./todos";
 import { completeReminder } from "./reminders";
@@ -382,6 +383,11 @@ export async function activate(context: vscode.ExtensionContext) {
       getChildren: () => store.all().slice(0, 200),
       getTreeItem: noteTreeItem,
     }),
+  );
+  const calendar = new CalendarProvider(store, (note) => open(note));
+  context.subscriptions.push(
+    calendar,
+    vscode.window.registerWebviewViewProvider("howm.calendar", calendar),
   );
   const todos = new TodoProvider(store);
   context.subscriptions.push(todos);

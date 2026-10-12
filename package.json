@@ -20,7 +20,8 @@
     "test": "npm run compile && node --test test/*.test.cjs",
     "package": "npm run compile && vsce package --allow-missing-repository",
     "test:integration": "npm run compile && node scripts/integration.cjs",
-    "test:view-registration": "npm run compile && node scripts/integration.cjs --missing-view"
+    "test:view-registration": "npm run compile && node scripts/integration.cjs --missing-view",
+    "test:import": "perl -c scripts/import-markdown.pl && prove test/import-markdown.t && npm run compile && node --test test/import-markdown.cjs"
   },
   "contributes": {
     "commands": [

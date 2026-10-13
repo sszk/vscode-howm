@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -21,7 +21,8 @@
     "package": "npm run compile && vsce package --allow-missing-repository",
     "test:integration": "npm run compile && node scripts/integration.cjs",
     "test:view-registration": "npm run compile && node scripts/integration.cjs --missing-view",
-    "test:import": "perl -c scripts/import-markdown.pl && prove test/import-markdown.t && npm run compile && node --test test/import-markdown.cjs"
+    "test:import": "perl -c scripts/import-markdown.pl && prove test/import-markdown.t && npm run compile && node --test test/import-markdown.cjs",
+    "test:windows-paths": "npm run compile && node scripts/integration.cjs --windows-paths"
   },
   "contributes": {
     "commands": [

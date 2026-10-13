@@ -32,12 +32,16 @@ export class Store implements vscode.Disposable {
     );
   }
   contains(uri: vscode.Uri) {
+    if (!this.root) return false;
+    // URI serialization normalizes drive letters and host names. The index
+    // stores serialized URIs, so compare both sides in that same form.
+    const root = vscode.Uri.parse(this.root.toString());
+    const candidate = vscode.Uri.parse(uri.toString());
     return (
-      !!this.root &&
-      uri.scheme === this.root.scheme &&
-      uri.authority === this.root.authority &&
-      uri.path.startsWith(this.root.path.replace(/\/$/, "") + "/") &&
-      /\.md$/i.test(uri.path)
+      candidate.scheme === root.scheme &&
+      candidate.authority === root.authority &&
+      candidate.path.startsWith(root.path.replace(/\/+$/, "") + "/") &&
+      /\.md$/i.test(candidate.path)
     );
   }
   private overlay(doc: vscode.TextDocument) {

@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { parseNote } = require("../dist/core");
 const { todoGroups, emptyTodoReason } = require("../dist/todo-model");
 
-test("sidebar groups preserve reminder priority, duplicate deadlines and collapse inactive entries", () => {
+test("sidebar groups preserve reminder priority without duplicate deadlines and collapse inactive entries", () => {
   const note = parseNote(
     "file:///a.md",
     "# A\n[2026-10-08]+ task\n[2026-10-10]! deadline\n[2026-10-12]@ appointment\n[2026-10-15]+ future\n[2026-10-01]@ past\n[2026-10-10]. done\n[2026-10-10]-",
@@ -23,7 +23,7 @@ test("sidebar groups preserve reminder priority, duplicate deadlines and collaps
   );
   assert.deepEqual(
     groups[1].entries.map((e) => e.reminder.text),
-    ["deadline", "appointment"],
+    ["appointment"],
   );
   assert.deepEqual(
     groups[2].entries.map((e) => e.reminder.text),
@@ -32,6 +32,14 @@ test("sidebar groups preserve reminder priority, duplicate deadlines and collaps
   const entries = groups.flatMap((g) => g.entries);
   assert.ok(entries.every((e) => e.reminder.kind !== "."));
   assert.equal(new Set(entries.map((e) => e.id)).size, entries.length);
+  assert.equal(
+    new Set(
+      entries.map((e) =>
+        JSON.stringify([e.note.id, e.reminder.line, e.reminder.start]),
+      ),
+    ).size,
+    entries.length,
+  );
 });
 test("empty and completed notes have clear empty states and no empty groups", () => {
   assert.deepEqual(todoGroups([], "2026-10-10"), []);

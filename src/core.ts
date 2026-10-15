@@ -277,15 +277,18 @@ export function reminderList(notes: Note[], today = dateString()) {
     note.reminders.map((r) => ({ note, r, score: priority(r, today) })),
   );
   const unfinished = all.filter((x) => x.r.kind !== ".");
-  const schedule = unfinished
-    .filter(
-      (x) =>
-        (x.r.kind === "@" || x.r.kind === "!") && dayNumber(x.r.date) >= day,
-    )
-    .sort((a, b) => a.r.date.localeCompare(b.r.date));
   const todos = unfinished
     .filter((x) => x.r.kind !== "@" && Number.isFinite(x.score))
     .sort((a, b) => b.score - a.score);
+  const todoEntries = new Set(todos);
+  const schedule = unfinished
+    .filter(
+      (x) =>
+        (x.r.kind === "@" || x.r.kind === "!") &&
+        dayNumber(x.r.date) >= day &&
+        !todoEntries.has(x),
+    )
+    .sort((a, b) => a.r.date.localeCompare(b.r.date));
   const hidden = unfinished.filter(
     (x) => !schedule.includes(x) && !todos.includes(x),
   );

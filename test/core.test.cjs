@@ -5,6 +5,7 @@ const {
   search,
   keywordLinks,
   priority,
+  reminderList,
   dayNumber,
   filename,
   renderTemplate,
@@ -110,7 +111,6 @@ test("ten thousand notes can be indexed and searched", () => {
   );
 });
 test("reminder list includes active tasks and exposes why other entries are hidden", () => {
-  const { reminderList } = require("../dist/core");
   const note = parseNote(
     "a",
     "[2026-10-08]+ 今日のTodo\n[2026-10-15]+ 開始前\n[2026-10-12]@ 予定\n[2026-10-01]@ 過去\n[2026-10-08]. 完了",
@@ -134,6 +134,61 @@ test("reminder list includes active tasks and exposes why other entries are hidd
     reminderList([parseNote("a", "[2026-10-08]. 完了")], "2026-10-08")
       .unfinished.length,
     0,
+  );
+});
+test("deadlines move from the schedule to prioritized todos without duplicating or disappearing", () => {
+  const note = parseNote("a", "[2026-10-15]!7 deadline");
+  for (const [today, group] of [
+    ["2026-10-07", "schedule"],
+    ["2026-10-08", "todos"],
+    ["2026-10-14", "todos"],
+    ["2026-10-15", "todos"],
+    ["2026-10-16", "todos"],
+  ]) {
+    const result = reminderList([note], today);
+    assert.equal(result[group].length, 1, today);
+    assert.equal(result.all.length, 1);
+    assert.equal(result.unfinished.length, 1);
+    assert.equal(
+      result.todos.length + result.schedule.length + result.hidden.length,
+      1,
+      today,
+    );
+  }
+});
+test("reminder groups remain distinct for custom lead times and identical reminder text", () => {
+  const note = parseNote(
+    "a",
+    "[2026-10-15]!3 same\n[2026-10-15]!7 same\n[2027-10-15]@ same\n[2026-10-10]@ past\n[2026-10-10]. done",
+  );
+  const otherNote = parseNote("b", "[2026-10-15]!7 same");
+  const result = reminderList([note, otherNote], "2026-10-11");
+  assert.deepEqual(
+    result.todos.map((x) => [x.note.uri, x.r.kind, x.r.days]),
+    [
+      ["a", "!", 7],
+      ["b", "!", 7],
+    ],
+  );
+  assert.deepEqual(
+    result.schedule.map((x) => [x.r.kind, x.r.days]),
+    [
+      ["!", 3],
+      ["@", 7],
+    ],
+  );
+  assert.deepEqual(
+    result.hidden.map((x) => x.r.text),
+    ["past"],
+  );
+  const displayed = [...result.todos, ...result.schedule, ...result.hidden];
+  assert.equal(new Set(displayed).size, result.unfinished.length);
+  assert.equal(displayed.length, result.unfinished.length);
+  const nextDay = reminderList([note, otherNote], "2026-10-12");
+  assert.equal(nextDay.todos.length, 3);
+  assert.deepEqual(
+    nextDay.schedule.map((x) => x.r.kind),
+    ["@"],
   );
 });
 test("note date uses a header timestamp instead of a reminder or filename date", () => {

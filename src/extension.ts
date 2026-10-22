@@ -499,7 +499,11 @@ export async function activate(context: vscode.ExtensionContext) {
       providedTitle ??
       (await vscode.window.showInputBox({
         prompt: "タイトル（空でも作成できます）",
-        value: selection.split("\n")[0] || "メモ",
+        value:
+          selection.split("\n")[0] ||
+          vscode.workspace
+            .getConfiguration("howm")
+            .get<string>("defaultTitle", "メモ"),
       }));
     if (title !== undefined) await create(title);
   });

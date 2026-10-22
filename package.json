@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -205,6 +205,11 @@
           "type": "string",
           "default": "{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md",
           "description": "新規メモのファイル名。重複時は連番を追加。"
+        },
+        "howm.defaultTitle": {
+          "type": "string",
+          "default": "メモ",
+          "description": "新しいメモのタイトルの初期値。選択中のテキストがある場合はそちらを優先します。空文字列にすると初期値を空欄にできます。"
         },
         "howm.template": {
           "type": "string",

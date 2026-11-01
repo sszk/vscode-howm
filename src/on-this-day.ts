@@ -80,7 +80,7 @@ export class OnThisDayProvider
           : !this.store.root
             ? "メモの保存先を選択してください。"
             : !this.groups.length
-              ? "過去の今日のメモはありません"
+              ? "過去の今日のメモはありません。"
               : undefined);
     this.events.fire(undefined);
   }

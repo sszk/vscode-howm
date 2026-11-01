@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -175,7 +175,7 @@
       "view/title": [
         {
           "command": "howm.create",
-          "when": "view == howm.notes",
+          "when": "view == howm.notes || view == howm.calendar",
           "group": "navigation@1"
         },
         {

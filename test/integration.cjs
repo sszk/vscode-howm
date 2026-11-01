@@ -42,7 +42,9 @@ exports.run = async () => {
     await editor.edit((e) =>
       e.insert(new vscode.Position(3, 0), "未保存の変更\n"),
     );
-    assert.ok(store.files.get(a.uri.toString())[0].text.includes("未保存の変更"));
+    assert.ok(
+      store.files.get(a.uri.toString())[0].text.includes("未保存の変更"),
+    );
     await fs.writeFile(path.join(root, "b.md"), "# B changed\n検索UI\n");
     await store.read(uri);
     assert.equal(store.files.get(uri.toString())[0].title, "B changed");
@@ -76,7 +78,7 @@ exports.run = async () => {
       "vscode.executeLinkProvider",
       virtual.uri,
     );
-    assert.equal(sourceLinks.length, 3);
+    assert.equal(sourceLinks.length, 3, virtual.getText());
     for (const link of sourceLinks)
       assert.ok(virtual.getText(link.range).startsWith("元のメモを開く:"));
 
@@ -140,6 +142,7 @@ exports.run = async () => {
     await require("./sidebar-integration.cjs").run(root);
     await require("./multi-note-integration.cjs").run(root);
     await require("./notes-search-integration.cjs").run(root);
+    await require("./discovery-integration.cjs").run(root);
     await require("./windows-path-integration.cjs").run();
 
     console.log(

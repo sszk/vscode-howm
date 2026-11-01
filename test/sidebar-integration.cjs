@@ -41,7 +41,13 @@ exports.run = async (base) => {
   ).packageJSON;
   assert.deepEqual(
     manifest.contributes.views.howm.map((v) => v.id),
-    ["howm.calendar", "howm.todos", "howm.notes"],
+    [
+      "howm.calendar",
+      "howm.todos",
+      "howm.notes",
+      "howm.onThisDay",
+      "howm.similarNotes",
+    ],
   );
   assert.ok(
     manifest.contributes.viewsContainers.activitybar.some(

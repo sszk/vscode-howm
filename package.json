@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -119,6 +119,16 @@
         "command": "howm.focusNotesSearch",
         "title": "howm: メモ一覧で検索",
         "icon": "$(search)"
+      },
+      {
+        "command": "howm.refreshOnThisDay",
+        "title": "howm: 過去の今日を更新",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "howm.refreshSimilarNotes",
+        "title": "howm: 類似メモを更新",
+        "icon": "$(refresh)"
       }
     ],
     "keybindings": [
@@ -148,6 +158,16 @@
           "id": "howm.notes",
           "name": "メモ一覧",
           "type": "webview"
+        },
+        {
+          "id": "howm.onThisDay",
+          "name": "過去の今日",
+          "visibility": "collapsed"
+        },
+        {
+          "id": "howm.similarNotes",
+          "name": "類似メモ",
+          "visibility": "collapsed"
         }
       ]
     },
@@ -177,6 +197,16 @@
           "command": "howm.configure",
           "when": "view == howm.todos",
           "group": "navigation@2"
+        },
+        {
+          "command": "howm.refreshOnThisDay",
+          "when": "view == howm.onThisDay",
+          "group": "navigation@1"
+        },
+        {
+          "command": "howm.refreshSimilarNotes",
+          "when": "view == howm.similarNotes",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -234,6 +264,34 @@
           ],
           "default": "sunday",
           "description": "カレンダーの週の開始日。変更すると表示中のカレンダーにも即座に反映します。"
+        },
+        "howm.onThisDay.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "過去の今日のメモを年別に表示します。"
+        },
+        "howm.similarNotes.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "現在のメモに内容が近いメモを表示します。"
+        },
+        "howm.similarNotes.maxResults": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "description": "類似メモの最大表示件数。"
+        },
+        "howm.similarNotes.minSimilarity": {
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "表示する類似メモの最低類似度（0〜1）。"
+        },
+        "howm.similarNotes.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "メモの切り替えや編集時に類似メモを自動更新します。"
         }
       }
     },

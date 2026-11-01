@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { dateString, reminderList } from "./core";
 import { Store } from "./storage";
+import { LocalDayClock } from "./local-day";
 
 import { TodoGroup, TodoNode, todoGroups, emptyTodoReason } from "./todo-model";
 export { TodoEntry, TodoNode } from "./todo-model";
@@ -13,7 +14,7 @@ export class TodoProvider
   private groups: TodoGroup[] = [];
   private subscriptions: vscode.Disposable[] = [];
   private debounce?: ReturnType<typeof setTimeout>;
-  private dayTimer?: ReturnType<typeof setInterval>;
+  private dayTimer?: vscode.Disposable;
   private view?: vscode.TreeView<TodoNode>;
   private today: string;
   private disposed = false;
@@ -21,6 +22,7 @@ export class TodoProvider
   constructor(
     private store: Store,
     private clock: () => string = dateString,
+    private dayClock = new LocalDayClock(clock),
   ) {
     this.today = clock();
     this.subscriptions.push(
@@ -57,10 +59,10 @@ export class TodoProvider
   private startDayTimer() {
     this.stopDayTimer();
     this.checkDate();
-    this.dayTimer = setInterval(() => this.checkDate(), 60_000);
+    this.dayTimer = this.dayClock.watch(() => this.checkDate());
   }
   private stopDayTimer() {
-    if (this.dayTimer) clearInterval(this.dayTimer);
+    this.dayTimer?.dispose();
     this.dayTimer = undefined;
   }
   checkDate() {

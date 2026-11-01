@@ -6,6 +6,9 @@ import { NotesViewProvider } from "./notes-view";
 import { TodoProvider, TodoEntry, TodoNode } from "./todos";
 import { completeReminder } from "./reminders";
 import { openNote } from "./navigation";
+import { LocalDayClock } from "./local-day";
+import { OnThisDayProvider, AnniversaryNode } from "./on-this-day";
+import { SimilarNotesProvider } from "./similar-notes";
 import { regexSearch } from "./search";
 import {
   Note,
@@ -46,6 +49,21 @@ export async function activate(context: vscode.ExtensionContext) {
   const open = (note: Note, line = note.startLine, preview = false) =>
     openNote(store, note, line, preview);
   register("openNote", (note: Note) => (note?.id ? open(note) : undefined));
+  register("openDiscoveryNote", (snapshot: Note) => {
+    if (!snapshot?.id) return;
+    const current = store.files
+      .get(snapshot.uri)
+      ?.find((note) => note.id === snapshot.id);
+    // Section IDs contain a line number and can be reused after edits. Never
+    // resolve an old row to a different section at that line.
+    if (!current || current.source.text !== snapshot.source.text) {
+      void vscode.window.showInformationMessage(
+        "メモ一覧が更新されています。もう一度選択してください。",
+      );
+      return;
+    }
+    return open(current);
+  });
   const configure = async () => {
     const chosen = await vscode.window.showOpenDialog({
       canSelectFolders: true,
@@ -413,8 +431,34 @@ export async function activate(context: vscode.ExtensionContext) {
     calendar,
     vscode.window.registerWebviewViewProvider("howm.calendar", calendar),
   );
-  const todos = new TodoProvider(store);
-  context.subscriptions.push(todos);
+  const dayClock = new LocalDayClock();
+  const todos = new TodoProvider(store, dateString, dayClock);
+  context.subscriptions.push(todos, dayClock);
+  const anniversary = new OnThisDayProvider(store, dayClock);
+  context.subscriptions.push(anniversary);
+  const viewCommands = await vscode.commands.getCommands(true);
+  if (viewCommands.includes("howm.onThisDay.focus")) {
+    const view = vscode.window.createTreeView<AnniversaryNode>(
+      "howm.onThisDay",
+      {
+        treeDataProvider: anniversary,
+        showCollapseAll: true,
+      },
+    );
+    anniversary.attach(view);
+    context.subscriptions.push(view);
+  }
+  register("refreshOnThisDay", () => anniversary.refresh());
+  const similar = new SimilarNotesProvider(store);
+  context.subscriptions.push(similar);
+  if (viewCommands.includes("howm.similarNotes.focus")) {
+    const view = vscode.window.createTreeView<Note>("howm.similarNotes", {
+      treeDataProvider: similar,
+    });
+    similar.attach(view);
+    context.subscriptions.push(view);
+  }
+  register("refreshSimilarNotes", () => similar.refresh());
   let todoView: vscode.TreeView<TodoNode> | undefined;
   let registration: Promise<vscode.TreeView<TodoNode> | undefined> | undefined;
   const ensureTodoView = async () => {
@@ -736,7 +780,18 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("howm"))
+      // Keep the existing settings' reconciliation behavior. The new view-only
+      // settings are handled by their providers and do not require a disk scan.
+      if (
+        [
+          "notesDirectory",
+          "maxFileSizeKB",
+          "filenamePattern",
+          "defaultTitle",
+          "template",
+          "calendarWeekStart",
+        ].some((key) => e.affectsConfiguration(`howm.${key}`))
+      )
         void store
           .initialize()
           .catch((error) => output.appendLine(String(error)));

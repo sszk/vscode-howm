@@ -1,7 +1,61 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { parseNote } = require("../dist/core");
-const { todoGroups, emptyTodoReason } = require("../dist/todo-model");
+const {
+  todoGroups,
+  emptyTodoReason,
+  reminderHighlight,
+} = require("../dist/todo-model");
+
+test("deadline highlights include the threshold and due date, with overdue starting the next day", () => {
+  const deadline = (date) => ({ kind: "!", date, days: 7 });
+  const today = "2026-10-10";
+  assert.equal(reminderHighlight(deadline("2026-10-09"), today), "overdue");
+  assert.equal(reminderHighlight(deadline(today), today), "dueSoon");
+  assert.equal(reminderHighlight(deadline("2026-10-13"), today), "dueSoon");
+  assert.equal(reminderHighlight(deadline("2026-10-14"), today), undefined);
+  assert.equal(reminderHighlight(deadline("2026-10-14"), today, 4), "dueSoon");
+  assert.equal(reminderHighlight(deadline(today), today, 0), "dueSoon");
+  assert.equal(reminderHighlight(deadline("2026-10-11"), today, 0), undefined);
+  // The highlight threshold is independent of the reminder's priority grace period.
+  assert.equal(
+    reminderHighlight({ ...deadline("2026-10-13"), days: 1 }, today),
+    "dueSoon",
+  );
+  for (const invalid of [-1, 1.5, NaN, Infinity, "7"])
+    assert.equal(
+      reminderHighlight(deadline("2026-10-14"), today, invalid),
+      undefined,
+    );
+});
+
+test("only today's appointments and actual deadlines are highlighted", () => {
+  const today = "2026-10-10";
+  assert.equal(reminderHighlight({ kind: "@", date: today }, today), "today");
+  for (const date of ["2026-10-09", "2026-10-11"])
+    assert.equal(reminderHighlight({ kind: "@", date }, today), undefined);
+  for (const kind of ["+", "-", "~", "."])
+    for (const date of ["2026-10-09", today, "2026-10-11"])
+      assert.equal(reminderHighlight({ kind, date }, today), undefined);
+});
+
+test("highlight day counts cross month, year, leap day and daylight saving boundaries", () => {
+  for (const [today, date, days] of [
+    ["2026-10-31", "2026-11-01", 1],
+    ["2026-12-31", "2027-01-01", 1],
+    ["2028-02-28", "2028-03-01", 2],
+    ["2026-03-07", "2026-03-09", 2],
+    ["2026-10-31", "2026-11-02", 2],
+  ]) {
+    const reminder = { kind: "!", date };
+    assert.equal(reminderHighlight(reminder, today, days), "dueSoon");
+    assert.equal(reminderHighlight(reminder, today, days - 1), undefined);
+  }
+  assert.equal(
+    reminderHighlight({ kind: "!", date: "2026-02-30" }, "2026-03-01"),
+    undefined,
+  );
+});
 
 test("sidebar groups preserve reminder priority without duplicate deadlines and collapse inactive entries", () => {
   const note = parseNote(

@@ -114,6 +114,21 @@ Windowsで一覧・検索・カレンダー・Todoからクリックしてもメ
 
 項目には本文・日付・種別を表示し、本文がなければ「本文なし」と表示します。マウスを置くとメモのタイトル・保存場所・行番号を確認できます。クリックすると元のメモの該当行へ移動します。
 
+締切（`!`）は期日の3日前から当日まで文字とアイコンをオレンジ、期日を過ぎた翌日から赤で表示します。当日の予定（`@`）は黄色で表示します。開始日を表すTodo（`+`）・覚書（`-`）・保留（`~`）は、この期日の色分けの対象外です。日数は `howm.todos.dueSoonDays` で変更でき、`0` にすると締切当日だけオレンジになります。各リマインダの猶予日数（`!7` の `7` など）とは独立した設定で、並び順や分類には影響しません。日数の変更と日付の切り替わりは表示へ自動反映します。
+
+色はVS Code標準の [`workbench.colorCustomizations`](https://code.visualstudio.com/api/references/theme-color) で個別にカスタマイズできます。ライトテーマでは読みやすい濃い色を使います。文字の色分けには `explorer.decorations.colors`（標準 `true`）を有効にしてください。無効の場合もアイコンには色が付きます。たとえば `settings.json` に次を設定します。
+
+```json
+{
+  "howm.todos.dueSoonDays": 5,
+  "workbench.colorCustomizations": {
+    "howm.todoDueSoonForeground": "#FFA500",
+    "howm.todoOverdueForeground": "#FF6666",
+    "howm.scheduleTodayForeground": "#FFD700"
+  }
+}
+```
+
 項目にマウスを置いてチェックの完了ボタンを押すと、そのリマインダを完了にします。別のメモを編集中でも対象のリマインダだけを編集します。**自動保存はしません**。元のメモを開いて通常どおり保存してください。元のメモでUndoすれば完了を取り消せます。表示後にメモの内容が変わった場合は、一覧を更新して再操作を案内します。
 
 メモの編集・外部変更は自動で反映します。サイドバーの再表示時とVS Codeへ戻ったときにも保存先を読み込み直します。表示中は1分ごとに日付を確認し、日付が変わると優先度と分類を更新します。メモが多い場合は読み込みに時間がかかることがあります。
@@ -195,6 +210,8 @@ Windowsで一覧・検索・カレンダー・Todoからクリックしてもメ
 | `howm.template`        | タイトル・日時・本文。`{title}` `{date}` `{time}` `{body}` 対応 |
 | `howm.maxFileSizeKB`   | 1024（最小1）。ディスクから読み込む際、超えるファイルは索引から除外 |
 | `howm.calendarWeekStart` | `sunday`（日曜始まり）。`monday`で月曜始まりに変更 |
+| `howm.todos.dueSoonDays` | `3`（最小0）。締切をオレンジで表示し始める期日の何日前か。0は当日のみ |
+| `workbench.colorCustomizations` | `howm.todoDueSoonForeground`（期日が近い締切）、`howm.todoOverdueForeground`（期限超過）、`howm.scheduleTodayForeground`（当日の予定）の色を指定 |
 | `howm.similarNotes.enabled` | `true`。類似メモの有効・無効 |
 | `howm.similarNotes.maxResults` | `10`（最小1）。類似メモの最大表示件数 |
 | `howm.similarNotes.minSimilarity` | `0.1`（0〜1）。表示する最低類似度 |

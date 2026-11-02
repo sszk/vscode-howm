@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -25,6 +25,38 @@
     "test:windows-paths": "npm run compile && node scripts/integration.cjs --windows-paths"
   },
   "contributes": {
+    "colors": [
+      {
+        "id": "howm.todoDueSoonForeground",
+        "description": "Todoと予定ビューで期日が近い締切の文字色。",
+        "defaults": {
+          "dark": "#FFA500",
+          "light": "#AD5F00",
+          "highContrast": "#FFA500",
+          "highContrastLight": "#AD5F00"
+        }
+      },
+      {
+        "id": "howm.todoOverdueForeground",
+        "description": "Todoと予定ビューで期日を過ぎた締切の文字色。",
+        "defaults": {
+          "dark": "#FF6666",
+          "light": "#C62828",
+          "highContrast": "#FF6666",
+          "highContrastLight": "#C62828"
+        }
+      },
+      {
+        "id": "howm.scheduleTodayForeground",
+        "description": "Todoと予定ビューで当日の予定の文字色。",
+        "defaults": {
+          "dark": "#FFD700",
+          "light": "#806C00",
+          "highContrast": "#FFD700",
+          "highContrastLight": "#806C00"
+        }
+      }
+    ],
     "commands": [
       {
         "command": "howm.home",
@@ -264,6 +296,12 @@
           ],
           "default": "sunday",
           "description": "カレンダーの週の開始日。変更すると表示中のカレンダーにも即座に反映します。"
+        },
+        "howm.todos.dueSoonDays": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 0,
+          "description": "Todoと予定ビューで締切（!）を期日が近い色にする日数。期日の何日前から色を付けるかを指定します。0は当日のみ。期日翌日から期限超過の色になります。色はworkbench.colorCustomizationsのhowm.todoDueSoonForeground・howm.todoOverdueForeground・howm.scheduleTodayForegroundで変更できます。"
         },
         "howm.onThisDay.enabled": {
           "type": "boolean",

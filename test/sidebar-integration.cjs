@@ -105,8 +105,35 @@ exports.run = async (base) => {
     const blank = entries().find((e) => !e.reminder.text);
     assert.equal(provider.getTreeItem(blank).label, "本文なし");
     assert.ok(!entries().some((e) => e.reminder.text === "Already done"));
+    const reminderItem = (text) =>
+      provider.getTreeItem(entries().find((e) => e.reminder.text === text));
+    const deadlineItem = reminderItem("Deadline");
+    const appointmentItem = reminderItem("Appointment");
+    assert.equal(deadlineItem.resourceUri.scheme, "howm-todo");
+    assert.equal(
+      provider.provideFileDecoration(deadlineItem.resourceUri).color.id,
+      "howm.todoDueSoonForeground",
+    );
+    assert.equal(
+      appointmentItem.iconPath.color.id,
+      "howm.scheduleTodayForeground",
+    );
+    assert.equal(provider.provideFileDecoration(workUri), undefined);
+    for (const item of [deadlineItem, appointmentItem]) {
+      const color = manifest.contributes.colors.find(
+        (c) => c.id === item.iconPath.color.id,
+      );
+      assert.ok(color, "every reminder color must be contributed to the theme");
+      assert.match(color.defaults.dark, /^#[0-9A-F]{6}$/i);
+      assert.match(color.defaults.light, /^#[0-9A-F]{6}$/i);
+    }
+    assert.equal(
+      vscode.workspace.getConfiguration("howm").get("todos.dueSoonDays"),
+      3,
+    );
     const target = entries().find((e) => e.reminder.text === "Active task");
     const item = provider.getTreeItem(target);
+    assert.equal(item.iconPath.color, undefined);
     assert.equal(item.contextValue, "howm.reminder");
     assert.ok(item.tooltip.includes(`${workUri.fsPath}:3`));
     await vscode.commands.executeCommand(
@@ -238,6 +265,11 @@ exports.run = async (base) => {
 
     day = tomorrow;
     provider.checkDate();
+    assert.equal(
+      reminderItem("Deadline").iconPath.color.id,
+      "howm.todoOverdueForeground",
+    );
+    assert.equal(reminderItem("Appointment").iconPath.color, undefined);
     assert.ok(
       provider
         .getChildren()

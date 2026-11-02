@@ -3,14 +3,38 @@ import { dateString, reminderList } from "./core";
 import { Store } from "./storage";
 import { LocalDayClock } from "./local-day";
 
-import { TodoGroup, TodoNode, todoGroups, emptyTodoReason } from "./todo-model";
+import {
+  TodoGroup,
+  TodoNode,
+  ReminderHighlight,
+  todoGroups,
+  emptyTodoReason,
+  reminderHighlight,
+} from "./todo-model";
 export { TodoEntry, TodoNode } from "./todo-model";
 
+const highlightColors: Record<ReminderHighlight, string> = {
+  dueSoon: "howm.todoDueSoonForeground",
+  overdue: "howm.todoOverdueForeground",
+  today: "howm.scheduleTodayForeground",
+};
+
+function reminderUri(id: string): vscode.Uri {
+  // Separate resources for each reminder avoid coloring the note in Explorer.
+  return vscode.Uri.from({ scheme: "howm-todo", path: `/${id}` });
+}
+
 export class TodoProvider
-  implements vscode.TreeDataProvider<TodoNode>, vscode.Disposable
+  implements
+    vscode.TreeDataProvider<TodoNode>,
+    vscode.FileDecorationProvider,
+    vscode.Disposable
 {
   private events = new vscode.EventEmitter<TodoNode | undefined>();
   readonly onDidChangeTreeData = this.events.event;
+  private decorationEvents = new vscode.EventEmitter<undefined>();
+  readonly onDidChangeFileDecorations = this.decorationEvents.event;
+  private highlights = new Map<string, ReminderHighlight>();
   private groups: TodoGroup[] = [];
   private subscriptions: vscode.Disposable[] = [];
   private debounce?: ReturnType<typeof setTimeout>;
@@ -26,6 +50,10 @@ export class TodoProvider
   ) {
     this.today = clock();
     this.subscriptions.push(
+      vscode.window.registerFileDecorationProvider(this),
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration("howm.todos.dueSoonDays")) this.update();
+      }),
       store.onChange(() => {
         this.updateMessage();
         if (this.debounce) clearTimeout(this.debounce);
@@ -75,8 +103,30 @@ export class TodoProvider
     this.today = this.clock();
     if (!this.store.loading)
       this.groups = todoGroups(this.store.all(), this.today);
+    const dueSoonDays = vscode.workspace
+      .getConfiguration("howm")
+      .get<number>("todos.dueSoonDays", 3);
+    this.highlights.clear();
+    for (const group of this.groups) {
+      for (const entry of group.entries) {
+        const highlight = reminderHighlight(
+          entry.reminder,
+          this.today,
+          dueSoonDays,
+        );
+        if (highlight)
+          this.highlights.set(reminderUri(entry.id).toString(), highlight);
+      }
+    }
     this.updateMessage();
+    this.decorationEvents.fire(undefined);
     this.events.fire(undefined);
+  }
+  provideFileDecoration(uri: vscode.Uri): vscode.FileDecoration | undefined {
+    const highlight = this.highlights.get(uri.toString());
+    return highlight
+      ? { color: new vscode.ThemeColor(highlightColors[highlight]) }
+      : undefined;
   }
   private updateMessage() {
     if (!this.view || this.disposed) return;
@@ -122,12 +172,14 @@ export class TodoProvider
     item.description = `${r.date} ${r.kind}`;
     item.tooltip = `${node.note.title}\n${vscode.Uri.parse(node.note.uri).fsPath}:${r.line + 1}\n${r.date} ${r.kind}${r.days} ${r.text}`;
     item.contextValue = "howm.reminder";
+    item.resourceUri = reminderUri(node.id);
     item.iconPath = new vscode.ThemeIcon(
       r.kind === "!"
         ? "warning"
         : r.kind === "@"
           ? "calendar"
           : "circle-outline",
+      this.provideFileDecoration(item.resourceUri)?.color,
     );
     item.command = {
       command: "howm.openReminder",
@@ -141,6 +193,8 @@ export class TodoProvider
     if (this.debounce) clearTimeout(this.debounce);
     this.stopDayTimer();
     this.subscriptions.forEach((d) => d.dispose());
+    this.highlights.clear();
+    this.decorationEvents.dispose();
     this.events.dispose();
   }
 }

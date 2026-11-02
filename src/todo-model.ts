@@ -1,4 +1,21 @@
-import { Note, Reminder, dateString, reminderList } from "./core";
+import { Note, Reminder, dateString, dayNumber, reminderList } from "./core";
+
+export type ReminderHighlight = "dueSoon" | "overdue" | "today";
+
+export function reminderHighlight(
+  reminder: Reminder,
+  today = dateString(),
+  dueSoonDays = 3,
+): ReminderHighlight | undefined {
+  const remaining = dayNumber(reminder.date) - dayNumber(today);
+  if (reminder.kind === "@") return remaining === 0 ? "today" : undefined;
+  // Other reminder dates are start dates or recurrence anchors, not deadlines.
+  if (reminder.kind !== "!") return undefined;
+  if (remaining < 0) return "overdue";
+  const threshold =
+    Number.isInteger(dueSoonDays) && dueSoonDays >= 0 ? dueSoonDays : 3;
+  return remaining >= 0 && remaining <= threshold ? "dueSoon" : undefined;
+}
 
 export interface TodoEntry {
   type: "reminder";

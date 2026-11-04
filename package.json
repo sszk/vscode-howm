@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -123,6 +123,10 @@
       {
         "command": "howm.insertKeyword",
         "title": "howm: キーワードを挿入"
+      },
+      {
+        "command": "howm.insertWindowsPathLink",
+        "title": "howm: Windowsパスをリンクとして挿入"
       },
       {
         "command": "howm.history",

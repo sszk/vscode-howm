@@ -8,6 +8,7 @@ import { completeReminder } from "./reminders";
 import { openNote } from "./navigation";
 import { LocalDayClock } from "./local-day";
 import { parseHowmDate } from "./date-input";
+import { insertWindowsPathLink } from "./windows-path-link-command";
 import { OnThisDayProvider, AnniversaryNode } from "./on-this-day";
 import { SimilarNotesProvider } from "./similar-notes";
 import { regexSearch } from "./search";
@@ -654,6 +655,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const keyword = await vscode.window.showQuickPick(store.keywords());
     if (e && keyword) await e.edit((b) => b.replace(e.selection, keyword));
   });
+  register("insertWindowsPathLink", insertWindowsPathLink);
   register("reminders", async () => {
     // Reconcile before opening: filesystem notifications can be missed when
     // a watched directory did not exist yet or a sync client replaces it.

@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -111,6 +111,10 @@
       {
         "command": "howm.changeDate",
         "title": "howm: この行の日付を変更"
+      },
+      {
+        "command": "howm.inputDate",
+        "title": "howm: 日付を入力"
       },
       {
         "command": "howm.insertDate",

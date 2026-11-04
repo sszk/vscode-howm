@@ -144,6 +144,7 @@ exports.run = async () => {
     await require("./notes-search-integration.cjs").run(root);
     await require("./discovery-integration.cjs").run(root);
     await require("./windows-path-integration.cjs").run();
+    await require("./date-input-integration.cjs").run(root);
 
     console.log(
       "INTEGRATION PASSED: activation, links, completion, undo, dirty overlay, external edit/delete, reminder picker selection",

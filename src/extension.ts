@@ -7,6 +7,7 @@ import { TodoProvider, TodoEntry, TodoNode } from "./todos";
 import { completeReminder } from "./reminders";
 import { openNote } from "./navigation";
 import { LocalDayClock } from "./local-day";
+import { parseHowmDate } from "./date-input";
 import { OnThisDayProvider, AnniversaryNode } from "./on-this-day";
 import { SimilarNotesProvider } from "./similar-notes";
 import { regexSearch } from "./search";
@@ -18,7 +19,6 @@ import {
   noteAtLine,
   relatedNotes,
   dateString,
-  dayNumber,
   reminderList,
   renderTemplate,
   filename,
@@ -617,6 +617,38 @@ export async function activate(context: vscode.ExtensionContext) {
     const e = vscode.window.activeTextEditor;
     if (e) await e.edit((b) => b.replace(e.selection, `[${dateString()}]`));
   });
+  async function promptHowmDate(value?: string) {
+    const today = new Date();
+    const input = await vscode.window.showInputBox({
+      value,
+      prompt: "日付を入力",
+      placeHolder: "例: +7, 15, 12/5, 2027/2/20, mon",
+      validateInput: (s) =>
+        parseHowmDate(s, today) === undefined
+          ? "有効な日付を入力してください"
+          : undefined,
+    });
+    return input === undefined ? undefined : parseHowmDate(input, today);
+  }
+  register("inputDate", async () => {
+    const e = vscode.window.activeTextEditor;
+    if (!e) return;
+    const version = e.document.version;
+    const selections = [...e.selections];
+    const date = await promptHowmDate();
+    if (
+      date === undefined ||
+      vscode.window.activeTextEditor !== e ||
+      e.document.version !== version
+    )
+      return;
+    if (
+      !(await e.edit((b) => {
+        for (const selection of selections) b.replace(selection, `[${date}]`);
+      }))
+    )
+      void vscode.window.showErrorMessage("howm: 日付を挿入できませんでした");
+  });
   register("insertKeyword", async () => {
     const e = vscode.window.activeTextEditor;
     const keyword = await vscode.window.showQuickPick(store.keywords());
@@ -737,21 +769,21 @@ export async function activate(context: vscode.ExtensionContext) {
     const m = /\[(\d{4}-\d{2}-\d{2})/.exec(n.active[line - n.startLine]);
     if (!m) return;
     const version = e.document.version;
-    const value = await vscode.window.showInputBox({
-      value: m[1],
-      prompt: "日付 YYYY-MM-DD",
-      validateInput: (s) =>
-        Number.isFinite(dayNumber(s))
-          ? undefined
-          : "有効な日付を入力してください",
-    });
-    if (value && version === e.document.version)
-      await e.edit((b) =>
+    const value = await promptHowmDate(m[1]);
+    if (
+      value !== undefined &&
+      vscode.window.activeTextEditor === e &&
+      version === e.document.version
+    ) {
+      const applied = await e.edit((b) =>
         b.replace(
           new vscode.Range(line, m.index + 1, line, m.index + 11),
           value,
         ),
       );
+      if (!applied)
+        void vscode.window.showErrorMessage("howm: 日付を変更できませんでした");
+    }
   });
   register("refresh", async () => {
     await store.initialize();

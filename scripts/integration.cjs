@@ -12,6 +12,7 @@ if (!fs.existsSync(exe)) {
 const user = fs.mkdtempSync(path.join(os.tmpdir(), "howm-vscode-"));
 const missingView = process.argv.includes("--missing-view");
 const windowsPaths = process.argv.includes("--windows-paths");
+const urlPaste = process.argv.includes("--url-paste");
 let developmentPath = path.resolve(__dirname, "..");
 if (missingView) {
   developmentPath = path.join(user, "old-manifest");
@@ -32,6 +33,11 @@ if (missingView) {
     path.join(developmentPath, "dist"),
     { recursive: true },
   );
+  fs.symlinkSync(
+    path.resolve(__dirname, "../node_modules"),
+    path.join(developmentPath, "node_modules"),
+    "junction",
+  );
 }
 const child = spawn(
   exe,
@@ -43,7 +49,7 @@ const child = spawn(
     `--user-data-dir=${user}`,
     `--extensions-dir=${path.join(user, "extensions")}`,
     `--extensionDevelopmentPath=${developmentPath}`,
-    `--extensionTestsPath=${path.resolve(__dirname, missingView ? "../test/view-registration.cjs" : windowsPaths ? "../test/windows-path-integration.cjs" : "../test/integration.cjs")}`,
+    `--extensionTestsPath=${path.resolve(__dirname, missingView ? "../test/view-registration.cjs" : windowsPaths ? "../test/windows-path-integration.cjs" : urlPaste ? "../test/url-paste-integration.cjs" : "../test/integration.cjs")}`,
   ],
   {
     stdio: "inherit",

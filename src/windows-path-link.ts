@@ -1,3 +1,5 @@
+import { escapeLinkLabel } from "./markdown-link";
+
 interface FileLink {
   host: string;
   segments: string[];
@@ -122,7 +124,7 @@ export function windowsPathLink(input: string): string | undefined {
     const uri = `file://${authority}/${path}${readableSuffix(query)}${readableSuffix(fragment)}`;
     const name =
       [...segments].reverse().find((segment) => segment !== "") || host || "/";
-    const label = name.replace(/[\\`*_[\]()<>!&|~]/g, "\\$&");
+    const label = escapeLinkLabel(name);
     return `[${label}](${uri})`;
   } catch {
     // Invalid percent escapes, invalid UTF-8 and malformed authorities are input errors.

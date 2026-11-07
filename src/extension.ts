@@ -12,6 +12,7 @@ import { insertWindowsPathLink } from "./windows-path-link-command";
 import { OnThisDayProvider, AnniversaryNode } from "./on-this-day";
 import { SimilarNotesProvider } from "./similar-notes";
 import { regexSearch } from "./search";
+import { registerUrlPaste } from "./url-paste";
 import {
   Note,
   search,
@@ -25,6 +26,7 @@ import {
   filename,
 } from "./core";
 export async function activate(context: vscode.ExtensionContext) {
+  registerUrlPaste(context);
   const store = new Store();
   context.subscriptions.push(store);
   const output = vscode.window.createOutputChannel("Markdown howm");

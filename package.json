@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -20,6 +20,7 @@
     "test": "npm run compile && node --test test/*.test.cjs",
     "package": "npm run compile && vsce package --allow-missing-repository",
     "test:integration": "npm run compile && node scripts/integration.cjs",
+    "test:url-paste": "npm run compile && node scripts/integration.cjs --url-paste",
     "test:view-registration": "npm run compile && node scripts/integration.cjs --missing-view",
     "test:import": "perl -c scripts/import-markdown.pl && prove test/import-markdown.t && npm run compile && node --test test/import-markdown.cjs",
     "test:windows-paths": "npm run compile && node scripts/integration.cjs --windows-paths"
@@ -266,6 +267,11 @@
     "configuration": {
       "title": "Markdown howm",
       "properties": {
+        "howm.autoLinkOnPaste": {
+          "type": "boolean",
+          "default": true,
+          "description": "Markdownに単一のHTTP/HTTPS URLを貼り付けると、ページタイトル付きのリンクへ変換します。選択中のテキストがある場合はリンク名に使用します。"
+        },
         "howm.notesDirectory": {
           "type": "string",
           "default": "",
@@ -352,10 +358,16 @@
     }
   },
   "devDependencies": {
+    "@types/markdown-it": "^14.2.0",
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.95.0",
     "@vscode/vsce": "^3.0.0",
     "prettier": "^3.9.9",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "htmlparser2": "^10.1.0",
+    "ipaddr.js": "^2.5.0",
+    "markdown-it": "^14.3.3"
   }
 }

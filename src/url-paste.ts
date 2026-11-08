@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { codeRegions, touchesCode } from "./paste-code";
 import { escapeLinkLabel, singleWebUrl, webLink } from "./markdown-link";
 import { fetchPageTitle } from "./page-title";
+import { fileUrlLink } from "./windows-path-link";
 
 interface Insertion {
   start: number;
@@ -81,9 +82,11 @@ export class UrlPasteProvider
     const version = document.version;
     const item = data.get("text/plain");
     if (!item) return;
-    const url = singleWebUrl(await item.asString());
+    const value = await item.asString();
+    const url = singleWebUrl(value);
+    const fileLink = fileUrlLink(value);
     if (
-      !url ||
+      (!url && !fileLink) ||
       !this.enabled(document) ||
       document.version !== version ||
       token.isCancellationRequested
@@ -100,8 +103,8 @@ export class UrlPasteProvider
       insertions.push({
         start,
         length: end - start,
-        text: webLink(selected || new URL(url).hostname, url),
-        fetch: !selected,
+        text: fileLink ?? webLink(selected || new URL(url!).hostname, url!),
+        fetch: !!url && !selected,
       });
     }
     insertions.sort((a, b) => a.start - b.start);
@@ -135,13 +138,21 @@ export class UrlPasteProvider
         );
       edit.additionalEdit = additional;
     }
-    let expectedText = document.getText();
-    for (const item of [...insertions].reverse())
-      expectedText =
-        expectedText.slice(0, item.start) +
-        item.text +
-        expectedText.slice(item.start + item.length);
-    this.edits.set(edit, { document, version, url, insertions, expectedText });
+    if (url) {
+      let expectedText = document.getText();
+      for (const item of [...insertions].reverse())
+        expectedText =
+          expectedText.slice(0, item.start) +
+          item.text +
+          expectedText.slice(item.start + item.length);
+      this.edits.set(edit, {
+        document,
+        version,
+        url,
+        insertions,
+        expectedText,
+      });
+    }
     return [edit];
   }
 

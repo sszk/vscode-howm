@@ -1,6 +1,43 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { windowsPathLink } = require("../dist/windows-path-link");
+const { windowsPathLink, fileUrlLink } = require("../dist/windows-path-link");
+
+test("automatic file URL paste uses a decoded filename and the existing path conversion", () => {
+  for (const [input, expected] of [
+    ["file:///tmp/report.pdf", "[report.pdf](file:///tmp/report.pdf)"],
+    [
+      " \nFILE:///C:/%E8%B3%87%E6%96%99/設計%20書.pdf\r\n ",
+      "[設計 書.pdf](file:///C:/資料/設計%20書.pdf)",
+    ],
+    [
+      "file://Server/share/a%5Bb%5D.txt",
+      "[a\\[b\\].txt](file://Server/share/a%5Bb%5D.txt)",
+    ],
+    [
+      "file:///tmp/doc.md?x=1#section",
+      "[doc.md](file:///tmp/doc.md?x=1#section)",
+    ],
+    ["file:/tmp/folder/", "[folder](file:///tmp/folder/)"],
+  ])
+    assert.equal(fileUrlLink(input), expected, input);
+});
+
+test("automatic file URL paste rejects other clipboard text and malformed file URLs", () => {
+  for (const input of [
+    "",
+    "https://example.com/file.txt",
+    "C:/a.txt",
+    "//server/share/a.txt",
+    '"file:///tmp/a.txt"',
+    "[a](file:///tmp/a.txt)",
+    "file:///tmp/a.txt file:///tmp/b.txt",
+    "file:///tmp/a.txt\nfile:///tmp/b.txt",
+    "file:///tmp/a%ZZ.txt",
+    "file:///tmp/a%00.txt",
+    "file:relative.txt",
+  ])
+    assert.equal(fileUrlLink(input), undefined, JSON.stringify(input));
+});
 
 test("absolute Windows paths retain readable Unicode, drive letters and hierarchy on every OS", () => {
   for (const [input, expected] of [

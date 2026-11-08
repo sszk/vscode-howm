@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.13",
+  "version": "0.5.14",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -333,7 +333,7 @@
         "howm.autoLinkOnPaste": {
           "type": "boolean",
           "default": true,
-          "description": "Markdownに単一のHTTP/HTTPS URLを貼り付けると、ページタイトル付きのリンクへ変換します。選択中のテキストがある場合はリンク名に使用します。"
+          "description": "Markdownに単一のHTTP/HTTPS URLを貼り付けると、ページタイトル付きのリンクへ変換します。選択中のテキストがある場合はリンク名に使用します。file URLの場合はファイル名をリンク名に使用します。"
         },
         "howm.notesDirectory": {
           "type": "string",

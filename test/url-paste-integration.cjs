@@ -76,6 +76,47 @@ exports.run = async () => {
     );
     assert.equal(requests.length, 0, "selected labels must skip networking");
 
+    for (const [input, expected] of [
+      ["file:///tmp/report.pdf", "[report.pdf](file:///tmp/report.pdf)"],
+      [
+        " \nFILE:///C:/%E8%B3%87%E6%96%99/設計%20書.pdf\n ",
+        "[設計 書.pdf](file:///C:/資料/設計%20書.pdf)",
+      ],
+      [
+        "file://Server/share/a%5Bb%5D.txt",
+        "[a\\[b\\].txt](file://Server/share/a%5Bb%5D.txt)",
+      ],
+    ]) {
+      ed = await editor();
+      assert.equal(
+        await paste(ed, input),
+        expected,
+        "file URLs use their filename",
+      );
+      assert.equal(
+        requests.length,
+        0,
+        "file URL paste must skip title fetching",
+      );
+      assert.equal(ed.selection.active.character, expected.length);
+      await vscode.commands.executeCommand("undo");
+      assert.equal(ed.document.getText(), "");
+      await vscode.commands.executeCommand("redo");
+      assert.equal(ed.document.getText(), expected);
+    }
+    ed = await editor("first\nsecond");
+    ed.selections = [
+      new vscode.Selection(0, 0, 0, 5),
+      new vscode.Selection(1, 0, 1, 6),
+    ];
+    const fileLink = "[a.md](file:///tmp/a.md)";
+    assert.equal(
+      await paste(ed, "file:///tmp/a.md"),
+      `${fileLink}\n${fileLink}`,
+      "file names take precedence over selected text at every cursor",
+    );
+    assert.equal(requests.length, 0);
+
     for (const mode of ["edit", "delete", "undo"]) {
       ed = await editor();
       await paste(ed);
@@ -185,20 +226,23 @@ exports.run = async () => {
       ["```\n\n```", 1, 0],
       ["`code`", 0, 2],
     ]) {
-      ed = await editor(text);
-      ed.selection = new vscode.Selection(line, character, line, character);
-      const result = await paste(ed);
-      assert.ok(result.includes("https://example.com/資料"));
-      assert.ok(
-        !result.includes("[example.com]"),
-        "code must use native paste",
-      );
-      assert.equal(requests.length, 0);
+      for (const url of ["https://example.com/資料", "file:///tmp/a.md"]) {
+        ed = await editor(text);
+        ed.selection = new vscode.Selection(line, character, line, character);
+        const offset = ed.document.offsetAt(ed.selection.active);
+        assert.equal(
+          await paste(ed, url),
+          text.slice(0, offset) + url + text.slice(offset),
+          "code must use native paste",
+        );
+        assert.equal(requests.length, 0);
+      }
     }
     for (const value of [
       "https://example.com\nhttps://other.com",
       "[link](https://example.com)",
-      "file:///tmp/a.md",
+      "file:///tmp/a.md\nfile:///tmp/b.md",
+      "file:///tmp/a%ZZ.md",
     ]) {
       ed = await editor();
       assert.equal(await paste(ed, value), value);
@@ -214,6 +258,8 @@ exports.run = async () => {
     requests.pop().resolve(undefined);
     ed = await editor("", "plaintext");
     assert.equal(await paste(ed), "https://example.com/資料");
+    ed = await editor("", "plaintext");
+    assert.equal(await paste(ed, "file:///tmp/a.md"), "file:///tmp/a.md");
     ed = await editor();
     await paste(ed);
     await until(() => requests.length === 1, "pending title before disabling");
@@ -228,8 +274,10 @@ exports.run = async () => {
     assert.equal(ed.document.getText(), provisional);
     ed = await editor();
     assert.equal(await paste(ed), "https://example.com/資料");
+    ed = await editor();
+    assert.equal(await paste(ed, "file:///tmp/a.md"), "file:///tmp/a.md");
     console.log(
-      "URL PASTE PASSED: native paste, title update, selections, protected edits/deletion/Undo, offset tracking, multi-cursor, code, exclusions, settings and Undo/Redo",
+      "URL PASTE PASSED: native HTTP(S)/file paste, filenames, title update, selections, protected edits/deletion/Undo, offset tracking, multi-cursor, code, exclusions, settings and Undo/Redo",
     );
   } finally {
     await vscode.env.clipboard.writeText(clipboard);

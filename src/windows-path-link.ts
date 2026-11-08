@@ -99,6 +99,13 @@ function readableSuffix(value: string): string {
   );
 }
 
+/** Only a single file URL is eligible for automatic paste conversion. */
+export function fileUrlLink(input: string): string | undefined {
+  const value = input.trim();
+  if (!/^file:\/[^\s\x00-\x1f\x7f]*$/i.test(value)) return undefined;
+  return windowsPathLink(value);
+}
+
 /** Convert an absolute Windows/UNC path or file URI to a readable Markdown link. */
 export function windowsPathLink(input: string): string | undefined {
   try {

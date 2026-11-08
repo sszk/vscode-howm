@@ -3,6 +3,8 @@ import { randomBytes } from "node:crypto";
 import { Note, noteDisplayDate } from "./core";
 import { Store } from "./storage";
 import { LineMatch, matchSnippet, searchLines } from "./notes-search";
+import { PinnedNotes } from "./pinned-notes";
+import { pinButton, pinStyles } from "./pin-ui";
 
 const escape = (text: string) =>
   text.replace(
@@ -51,6 +53,7 @@ export class NotesViewProvider
   constructor(
     private store: Store,
     private open: (note: Note, selection?: vscode.Range) => Promise<unknown>,
+    private pins?: PinnedNotes,
   ) {
     this.subscriptions.push(
       this.readyEvent,
@@ -65,6 +68,8 @@ export class NotesViewProvider
         if (event.focused && this.view?.visible) void this.refresh();
       }),
     );
+    if (pins)
+      this.subscriptions.push(pins.onDidChangePinnedNotes(() => this.update()));
   }
 
   resolveWebviewView(view: vscode.WebviewView) {
@@ -97,7 +102,7 @@ export class NotesViewProvider
             this.limit += 200;
             this.update();
           } else if (
-            message?.type === "open" &&
+            (message?.type === "open" || message?.type === "pin") &&
             typeof message.renderId === "string" &&
             message.query === this.query &&
             typeof message.id === "string"
@@ -110,7 +115,11 @@ export class NotesViewProvider
               return;
             }
             const entry = this.displayed.get(message.id);
-            if (entry) await this.open(entry.note, entry.selection);
+            if (entry) {
+              if (message.type === "pin")
+                await this.pins?.togglePin(vscode.Uri.parse(entry.note.uri));
+              else await this.open(entry.note, entry.selection);
+            }
           }
         } catch (error) {
           void vscode.window.showErrorMessage(`howm: ${String(error)}`);
@@ -170,7 +179,13 @@ export class NotesViewProvider
 
   private update(resetScroll = false) {
     if (!this.view || !this.ready) return;
-    const notes = this.store.all();
+    const notes = [...this.store.all()];
+    if (this.pins)
+      notes.sort(
+        (a, b) =>
+          Number(this.pins!.isPinned(vscode.Uri.parse(b.uri))) -
+          Number(this.pins!.isPinned(vscode.Uri.parse(a.uri))),
+      );
     this.renderId = randomBytes(16).toString("hex");
     this.displayed.clear();
     let html = "",
@@ -182,7 +197,10 @@ export class NotesViewProvider
       const id = JSON.stringify(["note", note.id]);
       this.displayed.set(id, { note });
       const tooltip = `${vscode.Uri.parse(note.uri).fsPath}:${note.startLine + 1}\n${source}: ${date}`;
-      return `<button class="note" data-id="${escape(id)}" title="${escape(tooltip)}"><span class="title">${escape(note.title)}</span><span class="date">${date}</span></button>`;
+      const button = `<button class="note" data-id="${escape(id)}" title="${escape(tooltip)}"><span class="title">${escape(note.title)}</span><span class="date">${date}</span></button>`;
+      return this.pins
+        ? `<div class="note-row">${button}${pinButton(escape(id), this.pins.isPinned(vscode.Uri.parse(note.uri)))}</div>`
+        : button;
     };
     if (this.query) {
       const results = searchLines(notes, this.query);
@@ -237,6 +255,8 @@ export class NotesViewProvider
     return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
     <style nonce="${nonce}">
+    ${pinStyles}
+    .match+.note-row{margin-top:6px}
     html,body{height:100%}body{margin:0;display:flex;flex-direction:column;color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:var(--vscode-font-size)}
     header{padding:6px 10px;flex-shrink:0}.search{display:flex;gap:4px}input{box-sizing:border-box;min-width:0;flex:1;font:inherit;padding:4px 6px;border:1px solid var(--vscode-input-border,transparent);border-radius:2px;background:var(--vscode-input-background);color:var(--vscode-input-foreground)}input::placeholder{color:var(--vscode-input-placeholderForeground)}input::-webkit-search-cancel-button{display:none}
     button{font:inherit;color:inherit;background:transparent;border:0;border-radius:2px;cursor:pointer}button:focus-visible,input:focus{outline:1px solid var(--vscode-focusBorder);outline-offset:-1px}.clear{padding:0 6px;font-size:18px}button:disabled{opacity:.4;cursor:default}
@@ -261,17 +281,21 @@ export class NotesViewProvider
       else if(event.target===input&&event.key==='ArrowDown'){event.preventDefault();firstResult()?.focus();}
       else if(event.target===input&&event.key==='Enter'){event.preventDefault();if(timer)search(true);else firstResult()?.click();}
     });
-    results.addEventListener('click',event=>{const button=event.target.closest('button[data-id]');if(button)vscode.postMessage({type:'open',id:button.dataset.id,query:input.value,renderId});});
+    results.addEventListener('click',event=>{
+      const pin=event.target.closest('button[data-pin-id]');
+      if(pin){event.stopPropagation();if(event.detail>0)pin.blur();vscode.postMessage({type:'pin',id:pin.dataset.pinId,query:input.value,renderId});return;}
+      const button=event.target.closest('button[data-id]');if(button)vscode.postMessage({type:'open',id:button.dataset.id,query:input.value,renderId});
+    });
     more.addEventListener('click',()=>vscode.postMessage({type:'more',query:input.value,renderId}));
     window.addEventListener('message',event=>{
       const message=event.data;
       if(message.type==='focus'){input.focus();input.select();}
       else if(message.type==='results'&&message.query===input.value){
-        const focused=document.activeElement,focusId=results.contains(focused)?focused.dataset.id:undefined,scroll=main.scrollTop;
+        const focused=document.activeElement,wasPin=!!focused?.dataset?.pinId,focusId=results.contains(focused)?(wasPin?focused.dataset.pinId:focused.dataset.id):undefined,scroll=main.scrollTop;
         results.innerHTML=message.html;renderId=message.renderId;
         document.getElementById('count').textContent=message.count;document.getElementById('status').textContent=message.status;more.hidden=!message.more;
         main.scrollTop=message.resetScroll?0:scroll;
-        if(focusId){const buttons=Array.from(results.querySelectorAll('button'));(buttons.find(button=>button.dataset.id===focusId)||buttons[0]||input).focus({preventScroll:true});}
+        if(focusId){const buttons=Array.from(results.querySelectorAll('button'));(buttons.find(button=>(wasPin?button.dataset.pinId:button.dataset.id)===focusId)||buttons[0]||input).focus({preventScroll:true});}
       }
     });
     save();vscode.postMessage({type:'ready',query:input.value});

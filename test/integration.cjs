@@ -34,6 +34,8 @@ exports.run = async () => {
     await vscode.commands.executeCommand("howm.complete");
     assert.match(a.getText(), /\]\. \[2026-10-15\]:!7/);
     await vscode.commands.executeCommand("undo");
+    for (let i = 0; i < 100 && !a.getText().includes("[2026-10-15]!7"); i++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
     assert.match(a.getText(), /\[2026-10-15\]!7/);
     const { Store } = require("../dist/storage");
     const store = new Store();
@@ -145,6 +147,7 @@ exports.run = async () => {
     await require("./discovery-integration.cjs").run(root);
     await require("./windows-path-integration.cjs").run();
     await require("./date-input-integration.cjs").run(root);
+    await require("./pinned-notes-integration.cjs").run(root);
     await require("./windows-path-link-integration.cjs").run(root);
 
     console.log(

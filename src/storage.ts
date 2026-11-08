@@ -10,6 +10,8 @@ export class Store implements vscode.Disposable {
   private versions = new Map<string, number>();
   private events = new vscode.EventEmitter<void>();
   readonly onChange = this.events.event;
+  private deleted = new vscode.EventEmitter<vscode.Uri>();
+  readonly onDidDeleteUri = this.deleted.event;
   private subscriptions: vscode.Disposable[] = [];
   skipped = 0;
   loading = false;
@@ -139,6 +141,7 @@ export class Store implements vscode.Disposable {
       if (this.contains(uri)) void this.read(uri);
     });
     this.watcher.onDidDelete((uri) => {
+      this.deleted.fire(uri);
       for (const key of this.files.keys())
         if (key === uri.toString() || key.startsWith(uri.toString() + "/")) {
           this.versions.set(key, (this.versions.get(key) || 0) + 1);
@@ -257,6 +260,7 @@ export class Store implements vscode.Disposable {
     this.generation++;
     this.watcher?.dispose();
     this.events.dispose();
+    this.deleted.dispose();
     this.subscriptions.forEach((d) => d.dispose());
   }
 }

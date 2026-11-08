@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.6",
+  "version": "0.5.13",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -170,6 +170,26 @@
         "command": "howm.refreshSimilarNotes",
         "title": "howm: 類似メモを更新",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "howm.pinNote",
+        "title": "メモをピン留め",
+        "icon": {
+          "light": "resources/pin-filled-light.svg",
+          "dark": "resources/pin-filled-dark.svg"
+        }
+      },
+      {
+        "command": "howm.unpinNote",
+        "title": "ピン留めを解除",
+        "icon": {
+          "light": "resources/pin-horizontal-light.svg",
+          "dark": "resources/pin-horizontal-dark.svg"
+        }
+      },
+      {
+        "command": "howm.togglePin",
+        "title": "Howm: Toggle Pin"
       }
     ],
     "keybindings": [
@@ -208,7 +228,8 @@
         {
           "id": "howm.similarNotes",
           "name": "類似メモ",
-          "visibility": "collapsed"
+          "visibility": "collapsed",
+          "type": "webview"
         }
       ]
     },
@@ -255,12 +276,54 @@
           "command": "howm.completeReminder",
           "when": "view == howm.todos && viewItem == howm.reminder",
           "group": "inline"
+        },
+        {
+          "command": "howm.pinNote",
+          "when": "view == howm.similarNotes && viewItem == howm.note",
+          "group": "inline"
+        },
+        {
+          "command": "howm.unpinNote",
+          "when": "view == howm.similarNotes && viewItem == howm.pinnedNote",
+          "group": "inline"
         }
       ],
       "commandPalette": [
         {
           "command": "howm.completeReminder",
           "when": "false"
+        },
+        {
+          "command": "howm.pinNote",
+          "when": "false"
+        },
+        {
+          "command": "howm.unpinNote",
+          "when": "false"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "howm.pinNote",
+          "when": "resource in howm.noteResources && resource not in howm.pinnedNoteResources",
+          "group": "navigation@10"
+        },
+        {
+          "command": "howm.unpinNote",
+          "when": "resource in howm.noteResources && resource in howm.pinnedNoteResources",
+          "group": "navigation@10"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "howm.pinNote",
+          "when": "resource in howm.noteResources && resource not in howm.pinnedNoteResources",
+          "group": "howm@1"
+        },
+        {
+          "command": "howm.unpinNote",
+          "when": "resource in howm.noteResources && resource in howm.pinnedNoteResources",
+          "group": "howm@1"
         }
       ]
     },

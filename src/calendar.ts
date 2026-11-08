@@ -3,6 +3,8 @@ import { randomBytes } from "node:crypto";
 import { Store } from "./storage";
 import { Note, dateString, dayNumber } from "./core";
 import { CalendarWeekStart, calendarDays, monthDates } from "./calendar-model";
+import { PinnedNotes } from "./pinned-notes";
+import { pinButton, pinStyles, pinUpdateScript } from "./pin-ui";
 
 const escape = (value: string) =>
   value.replace(
@@ -32,6 +34,7 @@ export class CalendarProvider
   constructor(
     private store: Store,
     private open: (note: Note) => Promise<unknown>,
+    private pins?: PinnedNotes,
   ) {
     this.subscriptions.push(
       store.onChange(() => this.render()),
@@ -39,6 +42,10 @@ export class CalendarProvider
         if (event.affectsConfiguration("howm.calendarWeekStart")) this.render();
       }),
     );
+    if (pins)
+      this.subscriptions.push(
+        pins.onDidChangePinnedNotes(() => this.updatePins()),
+      );
   }
 
   resolveWebviewView(view: vscode.WebviewView) {
@@ -47,7 +54,9 @@ export class CalendarProvider
     this.subscriptions.push(
       view.webview.onDidReceiveMessage(async (message) => {
         try {
-          if (
+          if (message?.type === "ready") {
+            this.updatePins();
+          } else if (
             message?.type === "select" &&
             typeof message.date === "string" &&
             message.date.startsWith(`${this.month}-`) &&
@@ -72,12 +81,16 @@ export class CalendarProvider
             this.month = this.today.slice(0, 7);
             this.render();
           } else if (
-            message?.type === "open" &&
+            (message?.type === "open" || message?.type === "pin") &&
             typeof message.id === "string" &&
             message.renderId === this.renderId
           ) {
             const note = this.displayedNotes.find((n) => n.id === message.id);
-            if (note) await this.open(note);
+            if (note) {
+              if (message.type === "pin")
+                await this.pins?.togglePin(vscode.Uri.parse(note.uri));
+              else await this.open(note);
+            }
           }
         } catch (error) {
           void vscode.window.showErrorMessage(`howm: ${String(error)}`);
@@ -109,6 +122,16 @@ export class CalendarProvider
           this.render();
         }
       }, 60000);
+  }
+
+  private updatePins() {
+    if (!this.view || !this.pins) return;
+    void this.view.webview.postMessage({
+      type: "pins",
+      ids: this.displayedNotes
+        .filter((note) => this.pins!.isPinned(vscode.Uri.parse(note.uri)))
+        .map((note) => note.id),
+    });
   }
 
   private render() {
@@ -155,6 +178,7 @@ export class CalendarProvider
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
       <style nonce="${nonce}">
+      ${pinStyles}
       body{margin:0;padding:6px 10px;color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:var(--vscode-font-size)}
       button{font:inherit;color:inherit;background:transparent;border:1px solid transparent;cursor:pointer;border-radius:3px}
       button:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:1px}
@@ -174,9 +198,21 @@ export class CalendarProvider
       <div class="grid">${weekdays.map((d) => `<span class="weekday">${d}</span>`).join("")}${cells}</div>
       ${status ? `<p role="status">${escape(status)}</p>` : ""}
       <h2>${this.selected} のメモ (${notes.length})</h2>
-      ${notes.length ? notes.map((note) => `<button class="note" data-note-id="${escape(note.id)}">${escape(note.title)}</button>`).join("") : "<p>該当するメモはありません。</p>"}
+      ${
+        notes.length
+          ? notes
+              .map((note) => {
+                const button = `<button class="note" data-note-id="${escape(note.id)}">${escape(note.title)}</button>`;
+                return this.pins
+                  ? `<div class="note-row">${button}${pinButton(escape(note.id), this.pins.isPinned(vscode.Uri.parse(note.uri)))}</div>`
+                  : button;
+              })
+              .join("")
+          : "<p>該当するメモはありません。</p>"
+      }
       <script nonce="${nonce}">
       const vscode=acquireVsCodeApi();
+      ${pinUpdateScript}
       const state=vscode.getState();
       if(state?.focus){
         const button=Array.from(document.querySelectorAll('button')).find(b=>b.dataset.date===state.focus);
@@ -190,11 +226,13 @@ export class CalendarProvider
       document.addEventListener('mouseover',()=>document.querySelectorAll('.tooltip').forEach(t=>t.style.display=''));
       document.addEventListener('click',event=>{
         const button=event.target.closest('button');if(!button)return;
-        if(button.dataset.date){vscode.setState({focus:button.dataset.date});vscode.postMessage({type:'select',date:button.dataset.date});}
+        if(button.dataset.pinId){event.stopPropagation();if(event.detail>0)button.blur();vscode.postMessage({type:'pin',id:button.dataset.pinId,renderId:'${nonce}'});}
+        else if(button.dataset.date){vscode.setState({focus:button.dataset.date});vscode.postMessage({type:'select',date:button.dataset.date});}
         else if(button.dataset.delta)vscode.postMessage({type:'month',delta:Number(button.dataset.delta)});
         else if(button.dataset.noteId)vscode.postMessage({type:'open',id:button.dataset.noteId,renderId:'${nonce}'});
         else if(button.id==='today')vscode.postMessage({type:'today'});
       });
+      vscode.postMessage({type:'ready'});
       </script></body></html>`;
   }
 

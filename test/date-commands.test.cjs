@@ -87,6 +87,7 @@ async function fixture(text = "# Note\n[2026-11-05]!7 deadline\n") {
       registerTextDocumentContentProvider: noop,
       onDidCloseTextDocument: noop,
       onDidChangeConfiguration: noop,
+      onDidChangeWorkspaceFolders: noop,
     },
     languages: {
       registerDocumentLinkProvider: noop,

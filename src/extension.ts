@@ -11,6 +11,9 @@ import { parseHowmDate } from "./date-input";
 import { insertWindowsPathLink } from "./windows-path-link-command";
 import { OnThisDayProvider, AnniversaryNode } from "./on-this-day";
 import { SimilarNotesProvider } from "./similar-notes";
+import { SimilarNotesViewProvider } from "./similar-notes-view";
+import { PinnedNotes } from "./pinned-notes";
+import { PinCommands } from "./pin-commands";
 import { regexSearch } from "./search";
 import { registerUrlPaste } from "./url-paste";
 import {
@@ -49,6 +52,8 @@ export async function activate(context: vscode.ExtensionContext) {
         },
       ),
     );
+  const pins = new PinnedNotes(context.globalState, store);
+  context.subscriptions.push(pins, new PinCommands(store, pins, register));
   const open = (note: Note, line = note.startLine, preview = false) =>
     openNote(store, note, line, preview);
   register("openNote", (note: Note) => (note?.id ? open(note) : undefined));
@@ -395,8 +400,11 @@ export async function activate(context: vscode.ExtensionContext) {
     .flat()
     .some((view) => view.id === "howm.notes" && view.type === "webview");
   if (notesWebview) {
-    notesView = new NotesViewProvider(store, (note, selection) =>
-      openNote(store, note, note.startLine, false, selection),
+    notesView = new NotesViewProvider(
+      store,
+      (note, selection) =>
+        openNote(store, note, note.startLine, false, selection),
+      pins,
     );
     context.subscriptions.push(
       notesView,
@@ -429,7 +437,7 @@ export async function activate(context: vscode.ExtensionContext) {
       );
     return false;
   });
-  const calendar = new CalendarProvider(store, (note) => open(note));
+  const calendar = new CalendarProvider(store, (note) => open(note), pins);
   context.subscriptions.push(
     calendar,
     vscode.window.registerWebviewViewProvider("howm.calendar", calendar),
@@ -452,9 +460,20 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(view);
   }
   register("refreshOnThisDay", () => anniversary.refresh());
-  const similar = new SimilarNotesProvider(store);
+  const similarWebview = Object.values(contributedViews || {})
+    .flat()
+    .some((view) => view.id === "howm.similarNotes" && view.type === "webview");
+  const similar = similarWebview
+    ? new SimilarNotesViewProvider(store, pins, async (note) =>
+        vscode.commands.executeCommand("howm.openDiscoveryNote", note),
+      )
+    : new SimilarNotesProvider(store, pins);
   context.subscriptions.push(similar);
-  if (viewCommands.includes("howm.similarNotes.focus")) {
+  if (similar instanceof SimilarNotesViewProvider) {
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider("howm.similarNotes", similar),
+    );
+  } else if (viewCommands.includes("howm.similarNotes.focus")) {
     const view = vscode.window.createTreeView<Note>("howm.similarNotes", {
       treeDataProvider: similar,
     });
@@ -815,6 +834,11 @@ export async function activate(context: vscode.ExtensionContext) {
     if (chosen) await vscode.commands.executeCommand(`howm.${chosen.command}`);
   });
   context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      void store
+        .initialize()
+        .catch((error) => output.appendLine(String(error)));
+    }),
     vscode.workspace.onDidChangeConfiguration((e) => {
       // Keep the existing settings' reconciliation behavior. The new view-only
       // settings are handled by their providers and do not require a disk scan.

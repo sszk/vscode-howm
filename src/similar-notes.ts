@@ -3,13 +3,21 @@ import { Note, noteAtLine } from "./core";
 import { Store } from "./storage";
 import { noteTreeItem } from "./notes";
 import { SimilarNote, SimilarityIndex } from "./similar-notes-model";
+import { PinnedNotes } from "./pinned-notes";
+
+export type SimilarNotesView = Pick<
+  vscode.TreeView<Note>,
+  "visible" | "description" | "message"
+> & {
+  onDidChangeVisibility: (listener: () => unknown) => vscode.Disposable;
+};
 
 export class SimilarNotesProvider
   implements vscode.TreeDataProvider<Note>, vscode.Disposable
 {
   private events = new vscode.EventEmitter<Note | undefined>();
   readonly onDidChangeTreeData = this.events.event;
-  private view?: vscode.TreeView<Note>;
+  private view?: SimilarNotesView;
   private subscriptions: vscode.Disposable[] = [];
   private index = new SimilarityIndex();
   private results: SimilarNote[] = [];
@@ -18,7 +26,10 @@ export class SimilarNotesProvider
   private lastTarget?: string;
   private disposed = false;
 
-  constructor(private store: Store) {
+  constructor(
+    private store: Store,
+    private pins?: PinnedNotes,
+  ) {
     this.subscriptions.push(
       store.onChange(() => {
         this.cancel();
@@ -49,6 +60,10 @@ export class SimilarNotesProvider
         void this.update();
       }),
     );
+    if (pins)
+      this.subscriptions.push(
+        pins.onDidChangePinnedNotes(() => this.events.fire(undefined)),
+      );
   }
 
   private get settings() {
@@ -90,7 +105,7 @@ export class SimilarNotesProvider
     else this.publish([], "自動更新は無効です。更新ボタンで更新してください。");
   }
 
-  attach(view: vscode.TreeView<Note>) {
+  attach(view: SimilarNotesView) {
     this.view = view;
     this.subscriptions.push(
       view.onDidChangeVisibility(() => {
@@ -174,6 +189,11 @@ export class SimilarNotesProvider
 
   getTreeItem(note: Note): vscode.TreeItem {
     const item = noteTreeItem(note);
+    if (this.pins) {
+      const pinned = this.pins.isPinned(vscode.Uri.parse(note.uri));
+      item.contextValue = pinned ? "howm.pinnedNote" : "howm.note";
+      if (pinned) item.iconPath = new vscode.ThemeIcon("pinned");
+    }
     const score = this.results.find((result) => result.note === note)?.score;
     item.tooltip = `${item.tooltip}\n類似度: ${score?.toFixed(3) || "0"}`;
     item.command = {

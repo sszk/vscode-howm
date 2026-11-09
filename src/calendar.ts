@@ -2,7 +2,12 @@ import * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { Store } from "./storage";
 import { Note, dateString, dayNumber } from "./core";
-import { CalendarWeekStart, calendarDays, monthDates } from "./calendar-model";
+import {
+  CalendarWeekStart,
+  calendarDays,
+  calendarNoteText,
+  monthDates,
+} from "./calendar-model";
 import { PinnedNotes } from "./pinned-notes";
 import { pinButton, pinStyles, pinUpdateScript } from "./pin-ui";
 
@@ -191,7 +196,7 @@ export class CalendarProvider
       .tooltip{display:none;position:absolute;z-index:10;top:100%;left:0;width:max-content;max-width:200px;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;padding:8px;background:var(--vscode-editorHoverWidget-background);color:var(--vscode-editorHoverWidget-foreground);border:1px solid var(--vscode-editorHoverWidget-border);box-shadow:0 2px 8px var(--vscode-widget-shadow);pointer-events:none}
       .day:nth-child(7n+5) .tooltip,.day:nth-child(7n+6) .tooltip,.day:nth-child(7n) .tooltip{left:auto;right:0}
       .day:hover .tooltip,.day:focus-visible .tooltip{display:block}
-      h2{font-size:inherit;margin:10px 0 4px}.note{display:block;text-align:left;width:100%;padding:4px 6px;overflow-wrap:anywhere}.note:hover{background:var(--vscode-list-hoverBackground)}
+      h2{font-size:inherit;margin:10px 0 4px}.note{display:block;text-align:left;width:100%;padding:4px 6px;overflow-wrap:anywhere;white-space:pre-line}.note:hover{background:var(--vscode-list-hoverBackground)}
       p{margin:6px 0;color:var(--vscode-descriptionForeground)}
       </style></head><body>
       <header><button data-delta="-1" aria-label="前月">‹</button><strong>${this.month.replace("-", "年")}月</strong><button data-delta="1" aria-label="翌月">›</button><button id="today">今日</button></header>
@@ -202,7 +207,7 @@ export class CalendarProvider
         notes.length
           ? notes
               .map((note) => {
-                const button = `<button class="note" data-note-id="${escape(note.id)}">${escape(note.title)}</button>`;
+                const button = `<button class="note" data-note-id="${escape(note.id)}">${escape(calendarNoteText(note, this.selected))}</button>`;
                 return this.pins
                   ? `<div class="note-row">${button}${pinButton(escape(note.id), this.pins.isPinned(vscode.Uri.parse(note.uri)))}</div>`
                   : button;

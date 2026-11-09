@@ -28,6 +28,26 @@ export function calendarDays(notes: Note[]): Map<string, CalendarDay> {
   return days;
 }
 
+export function calendarNoteText(note: Note, date: string): string {
+  const reminders = note.reminders.filter(
+    (reminder) => reminder.date === date && reminder.kind !== ".",
+  );
+  if (reminders.length)
+    return reminders.map((reminder) => reminder.text || note.title).join("\n");
+
+  for (let index = 0; index < note.active.length; index++) {
+    const timestamp =
+      /^\s*\[(\d{4}-\d{2}-\d{2})(?: (?:[01]\d|2[0-3]):[0-5]\d)?\](?![@+!~.\-])/.exec(
+        note.active[index],
+      );
+    if (timestamp?.[1] === date) {
+      const text = note.lines[index].slice(timestamp[0].length).trim();
+      if (text) return text;
+    }
+  }
+  return note.title;
+}
+
 // UTC arithmetic keeps month grids independent of daylight-saving changes.
 export type CalendarWeekStart = "sunday" | "monday";
 

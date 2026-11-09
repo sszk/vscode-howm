@@ -66,6 +66,10 @@ test("calendar view renders escaped content, navigates and opens only selected n
     provider.resolveWebviewView(view);
     assert.match(view.webview.html, /role="tooltip"/);
     assert.match(view.webview.html, /&lt;img src=x&gt;/);
+    assert.match(
+      view.webview.html,
+      /class="note" data-note-id="[^"]+">&lt;img src=x&gt;<\/button>/,
+    );
     assert.ok(!view.webview.html.includes("<script>title</script>"));
     assert.match(view.webview.html, /default-src 'none'/);
     await open("outside");
@@ -115,10 +119,16 @@ test("calendar view renders escaped content, navigates and opens only selected n
     await receive({ type: "today" });
     assert.match(view.webview.html, /のメモ \(1\)/);
     // Two sections with identical titles and file URIs must remain separate.
-    notes = parseNotes(note.uri, `# Same\n[${today}]\n# Same\n[${today}]\n`);
+    notes = parseNotes(
+      note.uri,
+      `# Same\n[${today}]\nFirst body\n# Same\n[${today}]\nSecond body\n`,
+    );
     changed();
     assert.match(view.webview.html, /のメモ \(2\)/);
     assert.equal([...view.webview.html.matchAll(/data-note-id=/g)].length, 2);
+    assert.equal([...view.webview.html.matchAll(/>Same<\/button>/g)].length, 2);
+    assert.ok(!view.webview.html.includes("First body"));
+    assert.ok(!view.webview.html.includes("Second body"));
     await open(notes[1].id);
     assert.equal(opened, notes[1]);
     await open(notes[0].id);
@@ -138,6 +148,15 @@ test("calendar view renders escaped content, navigates and opens only selected n
     );
     await open(notes[0].id);
     assert.equal(opened, notes[0]);
+    notes = [
+      parseNote(note.uri, `# <script>title</script>\n[${today}]+ \nBody\n`),
+    ];
+    changed();
+    assert.match(
+      view.webview.html,
+      /class="note" data-note-id="[^"]+">&lt;script&gt;title&lt;\/script&gt;<\/button>/,
+    );
+    assert.ok(!view.webview.html.includes("<script>title</script>"));
     notes = [];
     changed();
     assert.match(view.webview.html, /のメモ \(0\)/);

@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "Markdown howm",
   "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.16",
+  "version": "0.5.17",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -190,6 +190,11 @@
       {
         "command": "howm.togglePin",
         "title": "Howm: Toggle Pin"
+      },
+      {
+        "command": "howm.refreshRelatedPassages",
+        "title": "howm: 関連箇所を更新",
+        "icon": "$(refresh)"
       }
     ],
     "keybindings": [
@@ -230,6 +235,12 @@
           "name": "類似メモ",
           "visibility": "collapsed",
           "type": "webview"
+        },
+        {
+          "id": "howm.relatedPassages",
+          "name": "関連箇所",
+          "visibility": "collapsed",
+          "type": "webview"
         }
       ]
     },
@@ -268,6 +279,11 @@
         {
           "command": "howm.refreshSimilarNotes",
           "when": "view == howm.similarNotes",
+          "group": "navigation@1"
+        },
+        {
+          "command": "howm.refreshRelatedPassages",
+          "when": "view == howm.relatedPassages",
           "group": "navigation@1"
         }
       ],
@@ -407,6 +423,53 @@
           "type": "boolean",
           "default": true,
           "description": "メモの切り替えや編集時に類似メモを自動更新します。"
+        },
+        "howm.relatedPassages.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "カーソル付近の説明文に関連する過去の記述を表示します。"
+        },
+        "howm.relatedPassages.maxResults": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "description": "関連箇所の最大表示件数。"
+        },
+        "howm.relatedPassages.minSimilarity": {
+          "type": "number",
+          "default": 0.15,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "表示する関連箇所の最低類似度（0〜1）。"
+        },
+        "howm.relatedPassages.contextLines": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 0,
+          "description": "検索キーに使用するカーソル前後の行数。短い場合は同じセクション内で広げます。"
+        },
+        "howm.relatedPassages.windowLines": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "description": "検索区間の有効な本文の行数。変更すると区間索引を再構築します。"
+        },
+        "howm.relatedPassages.windowStep": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "description": "検索区間をずらす行数。windowLinesを超える場合はwindowLinesに制限します。"
+        },
+        "howm.relatedPassages.minQueryLength": {
+          "type": "integer",
+          "default": 30,
+          "minimum": 1,
+          "description": "Markdown装飾・空白を除いた検索キーの最低文字数。"
+        },
+        "howm.relatedPassages.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "カーソル移動や編集時に500ms待って関連箇所を自動更新します。"
         }
       }
     },

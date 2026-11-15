@@ -47,6 +47,7 @@ exports.run = async (base) => {
       "howm.notes",
       "howm.onThisDay",
       "howm.similarNotes",
+      "howm.relatedPassages",
     ],
   );
   assert.ok(

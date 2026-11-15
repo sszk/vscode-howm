@@ -145,6 +145,7 @@ exports.run = async () => {
     await require("./multi-note-integration.cjs").run(root);
     await require("./notes-search-integration.cjs").run(root);
     await require("./discovery-integration.cjs").run(root);
+    await require("./related-passages-integration.cjs").run(root);
     await require("./windows-path-integration.cjs").run();
     await require("./date-input-integration.cjs").run(root);
     await require("./pinned-notes-integration.cjs").run(root);

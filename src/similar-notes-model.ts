@@ -10,62 +10,14 @@ export interface SimilarNote {
   note: Note;
   score: number;
 }
-type Cancelled = () => boolean;
-const yieldTurn = () => new Promise<void>((resolve) => setImmediate(resolve));
-
-// Only search text is derived here; note boundaries and identity come from Store.
-export function normalizeSimilarityText(text: string): string {
-  return text
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/\[\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2})?\][@+!~.\-]?\d*/g, " ")
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/https?:\/\/\S+/g, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/[`*_~>#|]/g, " ");
-}
-
-const boilerplate = new Set([
-  "the",
-  "and",
-  "for",
-  "with",
-  "this",
-  "that",
-  "note",
-  "notes",
-  "untitled",
-  "メモ",
-]);
-
-async function fieldTerms(
-  text: string,
-  cancelled: Cancelled,
-): Promise<Map<string, number> | undefined> {
-  const terms = new Map<string, number>();
-  const add = (term: string) => terms.set(term, (terms.get(term) || 0) + 1);
-  let deadline = performance.now() + 8,
-    steps = 0;
-  for (const match of normalizeSimilarityText(text).matchAll(
-    /[\p{L}\p{N}\p{M}]+/gu,
-  )) {
-    const word = match[0];
-    if (boilerplate.has(word)) continue;
-    const chars = Array.from(word); // Iterate code points, never UTF-16 halves.
-    for (let i = 0; i < chars.length; i++) {
-      if (i + 1 < chars.length) add(`2:${chars[i]}${chars[i + 1]}`);
-      if (i + 2 < chars.length)
-        add(`3:${chars[i]}${chars[i + 1]}${chars[i + 2]}`);
-      if (++steps % 1024 === 0 && performance.now() >= deadline) {
-        await yieldTurn();
-        if (cancelled()) return;
-        deadline = performance.now() + 8;
-      }
-    }
-    if (/^[a-z0-9]{2,}$/.test(word)) add(`w:${word}`);
-  }
-  return terms;
-}
+import {
+  Cancelled,
+  yieldTurn,
+  fieldTerms,
+  inverseDocumentFrequency,
+  correctedCosine,
+} from "./similarity-text";
+export { normalizeSimilarityText } from "./similarity-text";
 
 async function features(
   note: Note,
@@ -147,11 +99,10 @@ export class SimilarityIndex {
   private idf(term: string) {
     let value = this.idfs.get(term);
     if (value === undefined) {
-      value =
-        1 +
-        Math.log(
-          (1 + this.documents.size) / (1 + (this.frequencies.get(term) || 0)),
-        );
+      value = inverseDocumentFrequency(
+        this.documents.size,
+        this.frequencies.get(term) || 0,
+      );
       this.idfs.set(term, value);
     }
     return value;
@@ -216,8 +167,7 @@ export class SimilarityIndex {
         if (!otherNorm || cancelled()) return [];
         // Shrink weak matches: a single shared bigram or ubiquitous fragments
         // must not score as highly as a substantial shared phrase.
-        const score =
-          (Math.min(1, dot / (norm * otherNorm)) * evidence) / (evidence + 8);
+        const score = correctedCosine(dot, norm, otherNorm, evidence);
         if (score >= minSimilarity)
           results.push({ note: document.note, score });
       }

@@ -12,6 +12,7 @@ import { insertWindowsPathLink } from "./windows-path-link-command";
 import { OnThisDayProvider, AnniversaryNode } from "./on-this-day";
 import { SimilarNotesProvider } from "./similar-notes";
 import { SimilarNotesViewProvider } from "./similar-notes-view";
+import { RelatedPassagesProvider } from "./related-passages";
 import { PinnedNotes } from "./pinned-notes";
 import { PinCommands } from "./pin-commands";
 import { regexSearch } from "./search";
@@ -481,6 +482,21 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(view);
   }
   register("refreshSimilarNotes", () => similar.refresh());
+  const passages = new RelatedPassagesProvider(store);
+  context.subscriptions.push(passages);
+  if (
+    Object.values(contributedViews || {})
+      .flat()
+      .some((view) => view.id === "howm.relatedPassages")
+  ) {
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        "howm.relatedPassages",
+        passages,
+      ),
+    );
+  }
+  register("refreshRelatedPassages", () => passages.refresh());
   let todoView: vscode.TreeView<TodoNode> | undefined;
   let registration: Promise<vscode.TreeView<TodoNode> | undefined> | undefined;
   const ensureTodoView = async () => {

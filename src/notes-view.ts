@@ -1,3 +1,4 @@
+import { uiLanguage, modelText } from "./localization";
 import * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { Note, noteDisplayDate } from "./core";
@@ -110,7 +111,9 @@ export class NotesViewProvider
             if (message.renderId !== this.renderId) {
               this.update();
               void vscode.window.showInformationMessage(
-                "検索結果が更新されています。もう一度選択してください。",
+                vscode.l10n.t(
+                  "Search results have changed. Select a result again.",
+                ),
               );
               return;
             }
@@ -196,7 +199,7 @@ export class NotesViewProvider
       const { date, source } = noteDisplayDate(note);
       const id = JSON.stringify(["note", note.id]);
       this.displayed.set(id, { note });
-      const tooltip = `${vscode.Uri.parse(note.uri).fsPath}:${note.startLine + 1}\n${source}: ${date}`;
+      const tooltip = `${vscode.Uri.parse(note.uri).fsPath}:${note.startLine + 1}\n${modelText(source)}: ${date}`;
       const button = `<button class="note" data-id="${escape(id)}" title="${escape(tooltip)}"><span class="title">${escape(note.title)}</span><span class="date">${date}</span></button>`;
       return this.pins
         ? `<div class="note-row">${button}${pinButton(escape(id), this.pins.isPinned(vscode.Uri.parse(note.uri)))}</div>`
@@ -228,13 +231,17 @@ export class NotesViewProvider
       }
     } else html = notes.slice(0, 200).map(heading).join("");
     if (!total)
-      html = `<p>${this.query ? "一致する行がありません。" : "メモがありません。"}</p>`;
+      html = `<p>${escape(this.query ? vscode.l10n.t("No matching lines.") : vscode.l10n.t("No notes."))}</p>`;
     const status = this.store.error
-      ? `${this.store.error}\n保存先: ${this.store.root?.fsPath || "未設定"}\n更新ボタンで再試行してください。`
+      ? vscode.l10n.t(
+          "{0}\nNotes folder: {1}\nClick Refresh to retry.",
+          this.store.error,
+          this.store.root?.fsPath || vscode.l10n.t("Not set"),
+        )
       : this.store.loading
-        ? "読み込み中…"
+        ? vscode.l10n.t("Loading…")
         : !this.store.root
-          ? "メモの保存先を選択してください。"
+          ? vscode.l10n.t("Select a notes folder.")
           : "";
     void this.view.webview.postMessage({
       type: "results",
@@ -243,8 +250,15 @@ export class NotesViewProvider
       html,
       status,
       count: this.query
-        ? `${total}行 · ${noteCount}メモ${shown < total ? `（${shown}行表示）` : ""}`
-        : `${shown} / ${total}メモ`,
+        ? shown < total
+          ? vscode.l10n.t(
+              "{0} lines · {1} notes ({2} lines shown)",
+              total,
+              noteCount,
+              shown,
+            )
+          : vscode.l10n.t("{0} lines · {1} notes", total, noteCount)
+        : vscode.l10n.t("{0} / {1} notes", shown, total),
       more: !!this.query && shown < total,
       resetScroll,
     });
@@ -252,7 +266,7 @@ export class NotesViewProvider
 
   private html(): string {
     const nonce = randomBytes(16).toString("hex");
-    return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    return `<!DOCTYPE html><html lang="${uiLanguage()}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
     <style nonce="${nonce}">
     ${pinStyles}
@@ -262,7 +276,7 @@ export class NotesViewProvider
     button{font:inherit;color:inherit;background:transparent;border:0;border-radius:2px;cursor:pointer}button:focus-visible,input:focus{outline:1px solid var(--vscode-focusBorder);outline-offset:-1px}.clear{padding:0 6px;font-size:18px}button:disabled{opacity:.4;cursor:default}
     #count{margin-top:4px;font-size:11px;color:var(--vscode-descriptionForeground)}#status{white-space:pre-wrap;color:var(--vscode-descriptionForeground)}#status:empty{display:none}
     main{flex:1;min-height:0;overflow:auto;padding:0 10px 6px}.note,.match{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:4px 6px}.note:hover,.match:hover{background:var(--vscode-list-hoverBackground)}.title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.date,.line{font-size:11px;color:var(--vscode-descriptionForeground);flex-shrink:0}.line{min-width:2.5em;text-align:right}.text{min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}.match{align-items:baseline}.match+.note{margin-top:6px}mark{background:var(--vscode-editor-findMatchHighlightBackground);color:inherit;border:1px solid var(--vscode-editor-findMatchHighlightBorder,transparent)}p{color:var(--vscode-descriptionForeground)}#more{display:block;margin:6px auto;padding:4px 8px;background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground)}[hidden]{display:none!important}
-    </style></head><body><header><div class="search"><input id="query" type="search" aria-label="メモの全文検索" placeholder="全文検索…" value="${escape(this.query)}"><button id="clear" class="clear" aria-label="検索をクリア" title="検索をクリア">×</button></div><div id="count" role="status"></div><div id="status" role="status"></div></header><main id="main"><div id="results"></div><button id="more" hidden>さらに表示</button></main>
+    </style></head><body><header><div class="search"><input id="query" type="search" aria-label="${escape(vscode.l10n.t("Search All Notes"))}" placeholder="${escape(vscode.l10n.t("Search all text…"))}" value="${escape(this.query)}"><button id="clear" class="clear" aria-label="${escape(vscode.l10n.t("Clear Search"))}" title="${escape(vscode.l10n.t("Clear Search"))}">×</button></div><div id="count" role="status"></div><div id="status" role="status"></div></header><main id="main"><div id="results"></div><button id="more" hidden>${escape(vscode.l10n.t("Show More"))}</button></main>
     <script nonce="${nonce}">
     const vscode=acquireVsCodeApi(),input=document.getElementById('query'),clear=document.getElementById('clear'),results=document.getElementById('results'),main=document.getElementById('main'),more=document.getElementById('more');
     const state=vscode.getState();if(typeof state?.query==='string')input.value=state.query;

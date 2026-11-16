@@ -1,8 +1,8 @@
 {
   "name": "markdown-howm",
-  "displayName": "Markdown howm",
-  "description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
-  "version": "0.5.17",
+  "displayName": "%howm.displayName%",
+  "description": "%howm.description%",
+  "version": "0.5.18",
   "publisher": "local-howm",
   "license": "MIT",
   "engines": {
@@ -17,19 +17,21 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "test": "npm run compile && node --test test/*.test.cjs",
-    "package": "npm run compile && vsce package --allow-missing-repository",
+    "test": "npm run compile && npm run l10n:check && node --test test/*.test.cjs",
+    "package": "npm run compile && npm run l10n:check && vsce package --allow-missing-repository",
     "test:integration": "npm run compile && node scripts/integration.cjs",
     "test:url-paste": "npm run compile && node scripts/integration.cjs --url-paste",
     "test:view-registration": "npm run compile && node scripts/integration.cjs --missing-view",
     "test:import": "perl -c scripts/import-markdown.pl && prove test/import-markdown.t && npm run compile && node --test test/import-markdown.cjs",
-    "test:windows-paths": "npm run compile && node scripts/integration.cjs --windows-paths"
+    "test:windows-paths": "npm run compile && node scripts/integration.cjs --windows-paths",
+    "l10n:extract": "vscode-l10n-dev export --outDir ./l10n ./src",
+    "l10n:check": "node scripts/check-l10n.cjs"
   },
   "contributes": {
     "colors": [
       {
         "id": "howm.todoDueSoonForeground",
-        "description": "Todoと予定ビューで期日が近い締切の文字色。",
+        "description": "%howm.todoDueSoonForeground.description%",
         "defaults": {
           "dark": "#FFA500",
           "light": "#AD5F00",
@@ -39,7 +41,7 @@
       },
       {
         "id": "howm.todoOverdueForeground",
-        "description": "Todoと予定ビューで期日を過ぎた締切の文字色。",
+        "description": "%howm.todoOverdueForeground.description%",
         "defaults": {
           "dark": "#FF6666",
           "light": "#C62828",
@@ -49,7 +51,7 @@
       },
       {
         "id": "howm.scheduleTodayForeground",
-        "description": "Todoと予定ビューで当日の予定の文字色。",
+        "description": "%howm.scheduleTodayForeground.description%",
         "defaults": {
           "dark": "#FFD700",
           "light": "#806C00",
@@ -61,119 +63,119 @@
     "commands": [
       {
         "command": "howm.home",
-        "title": "howm: ホーム"
+        "title": "%howm.home.title%"
       },
       {
         "command": "howm.create",
-        "title": "howm: 新しいメモ",
+        "title": "%howm.create.title%",
         "icon": "$(new-file)"
       },
       {
         "command": "howm.capture",
-        "title": "howm: 速記"
+        "title": "%howm.capture.title%"
       },
       {
         "command": "howm.search",
-        "title": "howm: 全文検索",
+        "title": "%howm.search.title%",
         "icon": "$(search)"
       },
       {
         "command": "howm.searchRegex",
-        "title": "howm: 正規表現検索"
+        "title": "%howm.searchRegex.title%"
       },
       {
         "command": "howm.list",
-        "title": "howm: メモ一覧"
+        "title": "%howm.list.title%"
       },
       {
         "command": "howm.recent",
-        "title": "howm: 最近のメモ"
+        "title": "%howm.recent.title%"
       },
       {
         "command": "howm.follow",
-        "title": "howm: カーソル位置のリンクを開く"
+        "title": "%howm.follow.title%"
       },
       {
         "command": "howm.related",
-        "title": "howm: 関連メモ"
+        "title": "%howm.related.title%"
       },
       {
         "command": "howm.concatenate",
-        "title": "howm: 検索結果を連結表示"
+        "title": "%howm.concatenate.title%"
       },
       {
         "command": "howm.reminders",
-        "title": "howm: Todoと予定"
+        "title": "%howm.reminders.title%"
       },
       {
         "command": "howm.complete",
-        "title": "howm: この行のリマインダを完了"
+        "title": "%howm.complete.title%"
       },
       {
         "command": "howm.changeDate",
-        "title": "howm: この行の日付を変更"
+        "title": "%howm.changeDate.title%"
       },
       {
         "command": "howm.inputDate",
-        "title": "howm: 日付を入力"
+        "title": "%howm.inputDate.title%"
       },
       {
         "command": "howm.insertDate",
-        "title": "howm: 今日の日付を挿入"
+        "title": "%howm.insertDate.title%"
       },
       {
         "command": "howm.insertKeyword",
-        "title": "howm: キーワードを挿入"
+        "title": "%howm.insertKeyword.title%"
       },
       {
         "command": "howm.insertWindowsPathLink",
-        "title": "howm: Windowsパスをリンクとして挿入"
+        "title": "%howm.insertWindowsPathLink.title%"
       },
       {
         "command": "howm.history",
-        "title": "howm: 検索履歴"
+        "title": "%howm.history.title%"
       },
       {
         "command": "howm.random",
-        "title": "howm: ランダムなメモ"
+        "title": "%howm.random.title%"
       },
       {
         "command": "howm.refresh",
-        "title": "howm: 索引を再構築",
+        "title": "%howm.refresh.title%",
         "icon": "$(refresh)"
       },
       {
         "command": "howm.configure",
-        "title": "howm: メモの保存先を選択",
+        "title": "%howm.configure.title%",
         "icon": "$(folder-opened)"
       },
       {
         "command": "howm.showTodos",
-        "title": "howm: Todoサイドバーを開く"
+        "title": "%howm.showTodos.title%"
       },
       {
         "command": "howm.completeReminder",
-        "title": "howm: リマインダを完了",
+        "title": "%howm.completeReminder.title%",
         "icon": "$(check)"
       },
       {
         "command": "howm.focusNotesSearch",
-        "title": "howm: メモ一覧で検索",
+        "title": "%howm.focusNotesSearch.title%",
         "icon": "$(search)"
       },
       {
         "command": "howm.refreshOnThisDay",
-        "title": "howm: 過去の今日を更新",
+        "title": "%howm.refreshOnThisDay.title%",
         "icon": "$(refresh)"
       },
       {
         "command": "howm.refreshSimilarNotes",
-        "title": "howm: 類似メモを更新",
+        "title": "%howm.refreshSimilarNotes.title%",
         "icon": "$(refresh)"
       },
       {
         "command": "howm.pinNote",
-        "title": "メモをピン留め",
+        "title": "%howm.pinNote.title%",
         "icon": {
           "light": "resources/pin-filled-light.svg",
           "dark": "resources/pin-filled-dark.svg"
@@ -181,7 +183,7 @@
       },
       {
         "command": "howm.unpinNote",
-        "title": "ピン留めを解除",
+        "title": "%howm.unpinNote.title%",
         "icon": {
           "light": "resources/pin-horizontal-light.svg",
           "dark": "resources/pin-horizontal-dark.svg"
@@ -189,11 +191,11 @@
       },
       {
         "command": "howm.togglePin",
-        "title": "Howm: Toggle Pin"
+        "title": "%howm.togglePin.title%"
       },
       {
         "command": "howm.refreshRelatedPassages",
-        "title": "howm: 関連箇所を更新",
+        "title": "%howm.refreshRelatedPassages.title%",
         "icon": "$(refresh)"
       }
     ],
@@ -213,32 +215,32 @@
       "howm": [
         {
           "id": "howm.calendar",
-          "name": "カレンダー",
+          "name": "%howm.calendar.title%",
           "type": "webview"
         },
         {
           "id": "howm.todos",
-          "name": "Todoと予定"
+          "name": "%howm.todos.title%"
         },
         {
           "id": "howm.notes",
-          "name": "メモ一覧",
+          "name": "%howm.notes.title%",
           "type": "webview"
         },
         {
           "id": "howm.onThisDay",
-          "name": "過去の今日",
+          "name": "%howm.onThisDay.title%",
           "visibility": "collapsed"
         },
         {
           "id": "howm.similarNotes",
-          "name": "類似メモ",
+          "name": "%howm.similarNotes.title%",
           "visibility": "collapsed",
           "type": "webview"
         },
         {
           "id": "howm.relatedPassages",
-          "name": "関連箇所",
+          "name": "%howm.relatedPassages.title%",
           "visibility": "collapsed",
           "type": "webview"
         }
@@ -344,38 +346,38 @@
       ]
     },
     "configuration": {
-      "title": "Markdown howm",
+      "title": "%howm.configuration.title%",
       "properties": {
         "howm.autoLinkOnPaste": {
           "type": "boolean",
           "default": true,
-          "description": "Markdownに単一のHTTP/HTTPS URLを貼り付けると、ページタイトル付きのリンクへ変換します。選択中のテキストがある場合はリンク名に使用します。file URLの場合はファイル名をリンク名に使用します。"
+          "description": "%howm.autoLinkOnPaste.description%"
         },
         "howm.notesDirectory": {
           "type": "string",
           "default": "",
-          "description": "メモの保存先。空欄はワークスペース内のhowm。絶対パス、~/、ワークスペース相対パスに対応。"
+          "description": "%howm.notesDirectory.description%"
         },
         "howm.filenamePattern": {
           "type": "string",
           "default": "{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md",
-          "description": "新規メモのファイル名。重複時は連番を追加。"
+          "description": "%howm.filenamePattern.description%"
         },
         "howm.defaultTitle": {
           "type": "string",
           "default": "メモ",
-          "description": "新しいメモのタイトルの初期値。選択中のテキストがある場合はそちらを優先します。空文字列にすると初期値を空欄にできます。"
+          "description": "%howm.defaultTitle.description%"
         },
         "howm.template": {
           "type": "string",
           "default": "# {title}\n\n[{date} {time}]\n\n{body}\n",
-          "description": "新規メモ。{title}, {date}, {time}, {body}を使用可能。"
+          "description": "%howm.template.description%"
         },
         "howm.maxFileSizeKB": {
           "type": "number",
           "default": 1024,
           "minimum": 1,
-          "description": "索引に含めるMarkdownファイルの最大サイズ(KB)。"
+          "description": "%howm.maxFileSizeKB.description%"
         },
         "howm.calendarWeekStart": {
           "type": "string",
@@ -384,92 +386,92 @@
             "monday"
           ],
           "enumDescriptions": [
-            "日曜始まり（日・月・火・水・木・金・土）",
-            "月曜始まり（月・火・水・木・金・土・日）"
+            "%howm.calendarWeekStart.sunday.description%",
+            "%howm.calendarWeekStart.monday.description%"
           ],
           "default": "sunday",
-          "description": "カレンダーの週の開始日。変更すると表示中のカレンダーにも即座に反映します。"
+          "description": "%howm.calendarWeekStart.description%"
         },
         "howm.todos.dueSoonDays": {
           "type": "integer",
           "default": 3,
           "minimum": 0,
-          "description": "Todoと予定ビューで締切（!）を期日が近い色にする日数。期日の何日前から色を付けるかを指定します。0は当日のみ。期日翌日から期限超過の色になります。色はworkbench.colorCustomizationsのhowm.todoDueSoonForeground・howm.todoOverdueForeground・howm.scheduleTodayForegroundで変更できます。"
+          "description": "%howm.todos.dueSoonDays.description%"
         },
         "howm.onThisDay.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "過去の今日のメモを年別に表示します。"
+          "description": "%howm.onThisDay.enabled.description%"
         },
         "howm.similarNotes.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "現在のメモに内容が近いメモを表示します。"
+          "description": "%howm.similarNotes.enabled.description%"
         },
         "howm.similarNotes.maxResults": {
           "type": "integer",
           "default": 10,
           "minimum": 1,
-          "description": "類似メモの最大表示件数。"
+          "description": "%howm.similarNotes.maxResults.description%"
         },
         "howm.similarNotes.minSimilarity": {
           "type": "number",
           "default": 0.1,
           "minimum": 0,
           "maximum": 1,
-          "description": "表示する類似メモの最低類似度（0〜1）。"
+          "description": "%howm.similarNotes.minSimilarity.description%"
         },
         "howm.similarNotes.autoRefresh": {
           "type": "boolean",
           "default": true,
-          "description": "メモの切り替えや編集時に類似メモを自動更新します。"
+          "description": "%howm.similarNotes.autoRefresh.description%"
         },
         "howm.relatedPassages.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "カーソル付近の説明文に関連する過去の記述を表示します。"
+          "description": "%howm.relatedPassages.enabled.description%"
         },
         "howm.relatedPassages.maxResults": {
           "type": "integer",
           "default": 10,
           "minimum": 1,
-          "description": "関連箇所の最大表示件数。"
+          "description": "%howm.relatedPassages.maxResults.description%"
         },
         "howm.relatedPassages.minSimilarity": {
           "type": "number",
           "default": 0.15,
           "minimum": 0,
           "maximum": 1,
-          "description": "表示する関連箇所の最低類似度（0〜1）。"
+          "description": "%howm.relatedPassages.minSimilarity.description%"
         },
         "howm.relatedPassages.contextLines": {
           "type": "integer",
           "default": 5,
           "minimum": 0,
-          "description": "検索キーに使用するカーソル前後の行数。短い場合は同じセクション内で広げます。"
+          "description": "%howm.relatedPassages.contextLines.description%"
         },
         "howm.relatedPassages.windowLines": {
           "type": "integer",
           "default": 5,
           "minimum": 1,
-          "description": "検索区間の有効な本文の行数。変更すると区間索引を再構築します。"
+          "description": "%howm.relatedPassages.windowLines.description%"
         },
         "howm.relatedPassages.windowStep": {
           "type": "integer",
           "default": 2,
           "minimum": 1,
-          "description": "検索区間をずらす行数。windowLinesを超える場合はwindowLinesに制限します。"
+          "description": "%howm.relatedPassages.windowStep.description%"
         },
         "howm.relatedPassages.minQueryLength": {
           "type": "integer",
           "default": 30,
           "minimum": 1,
-          "description": "Markdown装飾・空白を除いた検索キーの最低文字数。"
+          "description": "%howm.relatedPassages.minQueryLength.description%"
         },
         "howm.relatedPassages.autoRefresh": {
           "type": "boolean",
           "default": true,
-          "description": "カーソル移動や編集時に500ms待って関連箇所を自動更新します。"
+          "description": "%howm.relatedPassages.autoRefresh.description%"
         }
       }
     },
@@ -477,7 +479,7 @@
       "activitybar": [
         {
           "id": "howm",
-          "title": "howm",
+          "title": "%howm.container.title%",
           "icon": "resources/howm.svg"
         }
       ]
@@ -487,6 +489,7 @@
     "@types/markdown-it": "^14.2.0",
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.95.0",
+    "@vscode/l10n-dev": "^0.0.35",
     "@vscode/vsce": "^3.0.0",
     "prettier": "^3.9.9",
     "typescript": "^5.7.0"
@@ -495,5 +498,6 @@
     "htmlparser2": "^10.1.0",
     "ipaddr.js": "^2.5.0",
     "markdown-it": "^14.3.3"
-  }
+  },
+  "l10n": "./l10n"
 }

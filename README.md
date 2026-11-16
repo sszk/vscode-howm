@@ -337,3 +337,37 @@ perl scripts/import-markdown.pl ./howm ./old-notes/20261012-note.md ./old-notes/
 `npm test` で型チェックとコアテストを実行します。`npm run test:integration` は独立したVS Codeプロファイルで実機テストを実行します（macOS以外は `VSCODE_EXECUTABLE` に実行ファイルを指定）。Desktop版VS Codeを対象とし、Web版には対応しません。Emacs Lisp、旧howm形式、Wikiリンク、Migemo、Markdownプレビュー拡張は含みません。
 
 howm: https://kaorahi.github.io/howm/
+
+## 表示言語と翻訳の更新
+
+VS Codeの表示言語に自動追従し、日本語では従来の日本語UI、英語と未対応の言語では英語UIを表示します。拡張専用の言語設定はありません。VS Codeの `Configure Display Language` で言語を変更し、ウィンドウを再起動してください。
+
+コマンド・ビュー・設定の表示文言は `package.nls.json`（英語）と `package.nls.ja.json`（日本語）で管理します。`package.json` では `%howm.create.title%` などの安定したキーを参照します。キーは表示文言の変更時も維持してください。
+
+実行時の文言はVS Code標準の `vscode.l10n.t("English message")` を使います。変数は `vscode.l10n.t("Notes for {0} ({1})", date, count)` のように文全体に含め、静的な英語リテラルから抽出できるようにしてください。Webviewでは拡張側で翻訳し、HTMLへ入れる前にエスケープします。スクリプトへ渡す文言には `scriptString()` を使います。CSPと既存のメッセージ形式を維持してください。
+
+```sh
+npm run l10n:extract
+# l10n/bundle.l10n.ja.json の追加・変更分を手動翻訳
+npm run l10n:check
+npm test
+```
+
+`l10n:extract` は `@vscode/l10n-dev` で `l10n/bundle.l10n.json` の英語原文だけを再生成し、日本語の手動翻訳は上書きしません。`l10n:check` はソースとのずれ、翻訳の不足・未使用、プレースホルダーの不一致を検出します。`npm test` と `npm run package` でも検査します。両方の `package.nls*.json` と `l10n/*.json` はVSIXに含まれます。
+
+メモ本文・タイトル・ユーザー入力・コマンドID・設定キーと設定値・保存形式・日付入力の解析・検索用語は翻訳しません。例えば `howm.defaultTitle` の既定値 `メモ` は作成するデータに関わるため維持しています。`core.ts`・`todo-model.ts`・検索ワーカーの固定文字列はモデルの互換性とVS Codeからの独立性を保ち、`src/localization.ts` の表示境界で翻訳します。通信エラーなど外部由来の詳細は元の表現を表示します。独立したPerl取り込みツールのCLI文言はVS Code UIの対象外です。
+
+他言語を追加する場合は `package.nls.<locale>.json` と `l10n/bundle.l10n.<locale>.json` を追加し、`src/localization.ts` の日付表示用ロケールも更新してください。翻訳ファイルは追加言語についても自動検査されます。
+
+実機テストは一時的なVS Codeプロファイルを使います。
+
+```sh
+npm run test:integration
+node scripts/integration.cjs --l10n --locale=en
+VSCODE_TEST_EXTENSIONS_DIR=/path/to/test-extensions node scripts/integration.cjs --l10n --locale=ja
+VSCODE_TEST_EXTENSIONS_DIR=/path/to/test-extensions node scripts/integration.cjs --l10n --locale=fr
+```
+
+日本語・フランス語の実機テストには、指定したテスト用拡張ディレクトリへそれぞれのVS Code言語パックを事前にインストールしてください。要求した言語が有効でなければテストは失敗します。自動テストは表示文言、Webview HTML、ピン操作、日付表示と既存機能を確認します。実際の画面では、日英の長い通知・設定説明、サイドバー幅を狭めたときの表示、読み上げラベルも確認してください。
+
+Localization APIと抽出ツールの仕様: [VS Code API](https://code.visualstudio.com/api/references/vscode-api#l10n)、[vscode-l10n](https://github.com/microsoft/vscode-l10n)。

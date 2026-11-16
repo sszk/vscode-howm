@@ -39,7 +39,7 @@ export class SimilarNotesProvider
         else
           this.publish(
             [],
-            "内容が変更されました。更新ボタンで更新してください。",
+            vscode.l10n.t("The content has changed. Click Refresh to update."),
           );
       }),
       vscode.window.onDidChangeActiveTextEditor(() => this.targetChanged()),
@@ -90,19 +90,25 @@ export class SimilarNotesProvider
   private targetChanged() {
     this.cancel();
     if (!this.settings.enabled) {
-      this.publish([], "類似メモは無効です。");
+      this.publish([], vscode.l10n.t("Similar Notes is disabled."));
       return;
     }
     this.lastTarget = this.target()?.id;
     if (!this.lastTarget) {
       this.publish(
         [],
-        "保存先内のMarkdown howmメモにカーソルを置いてください。",
+        vscode.l10n.t(
+          "Place the cursor in a Markdown howm note in the notes folder.",
+        ),
       );
       return;
     }
     if (this.settings.autoRefresh) this.schedule(0);
-    else this.publish([], "自動更新は無効です。更新ボタンで更新してください。");
+    else
+      this.publish(
+        [],
+        vscode.l10n.t("Auto refresh is disabled. Click Refresh to update."),
+      );
   }
 
   attach(view: SimilarNotesView) {
@@ -145,7 +151,7 @@ export class SimilarNotesProvider
     if (this.disposed || !this.view?.visible) return;
     const settings = this.settings;
     if (!settings.enabled) {
-      this.publish([], "類似メモは無効です。");
+      this.publish([], vscode.l10n.t("Similar Notes is disabled."));
       return;
     }
     const target = this.target();
@@ -153,13 +159,15 @@ export class SimilarNotesProvider
     if (!target) {
       this.publish(
         [],
-        "保存先内のMarkdown howmメモにカーソルを置いてください。",
+        vscode.l10n.t(
+          "Place the cursor in a Markdown howm note in the notes folder.",
+        ),
       );
       return;
     }
     const generation = this.generation;
     const cancelled = () => this.disposed || generation !== this.generation;
-    this.publish([], "類似メモを計算中…");
+    this.publish([], vscode.l10n.t("Finding similar notes…"));
     if (!(await this.index.sync(this.store.all(), cancelled))) return;
     const results = await this.index.search(
       target.id,
@@ -171,14 +179,14 @@ export class SimilarNotesProvider
     this.publish(
       results,
       this.store.error ||
-        (!results.length ? "類似メモはありません。" : undefined),
+        (!results.length ? vscode.l10n.t("No similar notes.") : undefined),
     );
   }
 
   private publish(results: SimilarNote[], message?: string) {
     if (this.disposed || !this.view?.visible) return;
     this.results = results;
-    this.view.description = `${results.length}件`;
+    this.view.description = vscode.l10n.t("{0} items", results.length);
     this.view.message = message;
     this.events.fire(undefined);
   }
@@ -195,10 +203,14 @@ export class SimilarNotesProvider
       if (pinned) item.iconPath = new vscode.ThemeIcon("pinned");
     }
     const score = this.results.find((result) => result.note === note)?.score;
-    item.tooltip = `${item.tooltip}\n類似度: ${score?.toFixed(3) || "0"}`;
+    item.tooltip = vscode.l10n.t(
+      "{0}\nSimilarity: {1}",
+      String(item.tooltip),
+      score?.toFixed(3) || "0",
+    );
     item.command = {
       command: "howm.openDiscoveryNote",
-      title: "開く",
+      title: vscode.l10n.t("Open"),
       arguments: [note],
     };
     return item;

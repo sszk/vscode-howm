@@ -86,7 +86,7 @@ export class Store implements vscode.Disposable {
             this.configurationSignature() !== this.refreshSignature)
         );
       } catch (error) {
-        this.error = `読み込みに失敗しました: ${String(error)}`;
+        this.error = vscode.l10n.t("Failed to load: {0}", String(error));
         throw error;
       } finally {
         this.loading = false;
@@ -155,7 +155,10 @@ export class Store implements vscode.Disposable {
         entries = await vscode.workspace.fs.readDirectory(dir);
       } catch (error) {
         if (generation === this.generation)
-          this.error = `保存先を読み込めません: ${String(error)}`;
+          this.error = vscode.l10n.t(
+            "Could not read the notes folder: {0}",
+            String(error),
+          );
         return;
       }
       for (const [name, type] of entries) {
@@ -230,7 +233,11 @@ export class Store implements vscode.Disposable {
           error.code === "FileNotFound"
         )
           this.files.delete(key);
-        else this.error = `メモを読み込めません: ${String(error)}`;
+        else
+          this.error = vscode.l10n.t(
+            "Could not read the note: {0}",
+            String(error),
+          );
       }
     } finally {
       if (notify) this.events.fire();

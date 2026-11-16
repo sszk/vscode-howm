@@ -60,6 +60,7 @@ const contexts = new Map(),
   errors = [];
 let stat = async () => ({});
 const api = {
+  ...require("./localization-fixture.cjs").localization(),
   Uri,
   EventEmitter: Emitter,
   FileSystemError,

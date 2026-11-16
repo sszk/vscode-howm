@@ -74,6 +74,7 @@ async function fixture(text = "# Note\n[2026-11-05]!7 deadline\n") {
     },
   };
   const api = {
+    ...require("./localization-fixture.cjs").localization(),
     window,
     Range,
     commands: {
@@ -106,6 +107,7 @@ async function fixture(text = "# Note\n[2026-11-05]!7 deadline\n") {
     },
     require: (name) => {
       if (name === "vscode") return api;
+      if (name === "./localization") return { errorMessage: String };
       if (name === "./url-paste") return { registerUrlPaste() {} };
       if (name === "./core" || name === "./date-input")
         return realRequire(name);

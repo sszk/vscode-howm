@@ -1,3 +1,4 @@
+import { uiLanguage } from "./localization";
 import * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { noteAtLine, noteDisplayDate } from "./core";
@@ -118,8 +119,8 @@ export class RelatedPassagesProvider
     this.publish(
       [],
       this.settings.autoRefresh
-        ? "関連箇所を更新中…"
-        : "自動更新は無効です。更新ボタンで更新してください。",
+        ? vscode.l10n.t("Updating related passages…")
+        : vscode.l10n.t("Auto refresh is disabled. Click Refresh to update."),
     );
     if (this.settings.autoRefresh) this.schedule();
   }
@@ -191,7 +192,7 @@ export class RelatedPassagesProvider
     if (this.disposed || !this.view?.visible) return;
     const settings = this.settings;
     if (!settings.enabled) {
-      this.publish([], "関連箇所は無効です。");
+      this.publish([], vscode.l10n.t("Related Passages is disabled."));
       return;
     }
     const query = this.target();
@@ -201,15 +202,17 @@ export class RelatedPassagesProvider
         [],
         this.store.error ||
           (this.store.loading
-            ? "メモを読み込み中…"
-            : "保存先内のMarkdown howmメモで、十分な長さの説明文にカーソルを置いてください。"),
+            ? vscode.l10n.t("Loading notes…")
+            : vscode.l10n.t(
+                "Place the cursor in a longer passage in a Markdown howm note in the notes folder.",
+              )),
       );
       return;
     }
     const generation = this.generation;
     const cancelled = () =>
       this.disposed || generation !== this.generation || !this.view?.visible;
-    this.publish([], "関連箇所を計算中…");
+    this.publish([], vscode.l10n.t("Finding related passages…"));
     if (
       !(await this.index.sync(
         this.store.all(),
@@ -228,7 +231,8 @@ export class RelatedPassagesProvider
     if (cancelled()) return;
     this.publish(
       results,
-      this.store.error || (!results.length ? "関連箇所はありません。" : ""),
+      this.store.error ||
+        (!results.length ? vscode.l10n.t("No related passages.") : ""),
     );
   }
 
@@ -239,7 +243,9 @@ export class RelatedPassagesProvider
       ?.find((n) => n.id === snapshot.note.id);
     if (!current || current.source.text !== snapshot.note.source.text) {
       void vscode.window.showInformationMessage(
-        "メモが変更されています。関連箇所を更新してもう一度選択してください。",
+        vscode.l10n.t(
+          "The note has changed. Refresh related passages and select it again.",
+        ),
       );
       await this.update();
       return;
@@ -268,7 +274,7 @@ export class RelatedPassagesProvider
     if (this.disposed || !this.view?.visible) return;
     this.results = results;
     this.message = message;
-    this.view.description = `${results.length}件`;
+    this.view.description = vscode.l10n.t("{0} items", results.length);
     this.render();
   }
 
@@ -278,8 +284,13 @@ export class RelatedPassagesProvider
     const html = this.results
       .map(({ passage: p, score, excerpt }) => {
         const { date } = noteDisplayDate(p.note);
-        const tooltip = `${vscode.Uri.parse(p.note.uri).fsPath}:${p.startLine + 1}\n関連度: ${score.toFixed(3)}`;
-        return `<button class="passage" data-id="${escape(p.id)}" title="${escape(tooltip)}"><span class="title">${escape(p.note.title)}</span><span class="meta">${date} · ${p.startLine + 1}行目</span><span class="excerpt">${escape(excerpt)}</span></button>`;
+        const tooltip = vscode.l10n.t(
+          "{0}:{1}\nRelevance: {2}",
+          vscode.Uri.parse(p.note.uri).fsPath,
+          p.startLine + 1,
+          score.toFixed(3),
+        );
+        return `<button class="passage" data-id="${escape(p.id)}" title="${escape(tooltip)}"><span class="title">${escape(p.note.title)}</span><span class="meta">${escape(vscode.l10n.t("{0} · Line {1}", date, p.startLine + 1))}</span><span class="excerpt">${escape(excerpt)}</span></button>`;
       })
       .join("");
     void this.view.webview.postMessage({
@@ -292,7 +303,7 @@ export class RelatedPassagesProvider
 
   private html() {
     const nonce = randomBytes(16).toString("hex");
-    return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    return `<!DOCTYPE html><html lang="${uiLanguage()}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
     <style nonce="${nonce}">
     body{margin:0;padding:0 10px 6px;color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:var(--vscode-font-size)}
@@ -301,7 +312,7 @@ export class RelatedPassagesProvider
     .title{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.meta{font-size:11px;color:var(--vscode-descriptionForeground)}
     .excerpt{white-space:pre-line;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
     #status{white-space:pre-wrap;color:var(--vscode-descriptionForeground)}#status:empty{display:none}
-    </style></head><body><p id="status" role="status"></p><main id="results" aria-label="関連箇所"></main>
+    </style></head><body><p id="status" role="status"></p><main id="results" aria-label="${escape(vscode.l10n.t("Related Passages"))}"></main>
     <script nonce="${nonce}">
     const vscode=acquireVsCodeApi(),results=document.getElementById('results');let renderId='';
     results.addEventListener('click',event=>{const button=event.target.closest('button[data-id]');if(button)vscode.postMessage({type:'open',id:button.dataset.id,renderId});});

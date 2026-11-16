@@ -1,3 +1,4 @@
+import { modelText } from "./localization";
 import * as vscode from "vscode";
 import { Note, noteDisplayDate } from "./core";
 
@@ -9,9 +10,9 @@ export function noteTreeItem(note: Note): vscode.TreeItem {
   item.description = date;
   item.command = {
     command: "howm.openNote",
-    title: "開く",
+    title: vscode.l10n.t("Open"),
     arguments: [note],
   };
-  item.tooltip = `${note.uri}:${note.startLine + 1}\n${source}: ${date}`;
+  item.tooltip = `${note.uri}:${note.startLine + 1}\n${modelText(source)}: ${date}`;
   return item;
 }

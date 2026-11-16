@@ -167,7 +167,10 @@ exports.run = async (base) => {
     day = "2026-11-02";
     clock.checkDate();
     assert.deepEqual(past(), []);
-    assert.match(anniversaryView.message, /過去の今日のメモはありません/);
+    assert.equal(
+      anniversaryView.message,
+      vscode.l10n.t("No notes from this day in previous years."),
+    );
 
     await vscode.workspace
       .getConfiguration("howm")
@@ -204,7 +207,10 @@ exports.run = async (base) => {
     await vscode.workspace
       .getConfiguration("howm")
       .update("onThisDay.enabled", false, vscode.ConfigurationTarget.Global);
-    assert.match(anniversaryView.message, /無効/);
+    assert.equal(
+      anniversaryView.message,
+      vscode.l10n.t("On This Day is disabled."),
+    );
     assert.equal(clock.timer, undefined);
 
     // Hidden trees do not render, and re-showing reconciles missed file events.

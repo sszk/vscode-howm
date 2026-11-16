@@ -91,7 +91,9 @@ exports.run = async (base) => {
     const memoItem = noteTreeItem(dated);
     assert.equal(memoItem.label, "Dated note");
     assert.equal(memoItem.description, "2026-09-21");
-    assert.ok(memoItem.tooltip.includes("メモ内の日付: 2026-09-21"));
+    assert.ok(
+      memoItem.tooltip.includes(`${vscode.l10n.t("Date in note")}: 2026-09-21`),
+    );
     assert.equal(memoItem.command.command, "howm.openNote");
     assert.equal(memoItem.resourceUri.toString(), workUri.toString());
     const groups = provider.getChildren();
@@ -104,7 +106,7 @@ exports.run = async (base) => {
       vscode.TreeItemCollapsibleState.Collapsed,
     );
     const blank = entries().find((e) => !e.reminder.text);
-    assert.equal(provider.getTreeItem(blank).label, "本文なし");
+    assert.equal(provider.getTreeItem(blank).label, vscode.l10n.t("No text"));
     assert.ok(!entries().some((e) => e.reminder.text === "Already done"));
     const reminderItem = (text) =>
       provider.getTreeItem(entries().find((e) => e.reminder.text === text));
@@ -300,7 +302,11 @@ exports.run = async (base) => {
       .update("notesDirectory", missing, vscode.ConfigurationTarget.Global);
     await provider.refresh();
     assert.equal(provider.getChildren().length, 0);
-    assert.match(view.message, /保存先を読み込めません/);
+    assert.ok(
+      view.message.includes(
+        vscode.l10n.t("Could not read the notes folder: {0}", ""),
+      ),
+    );
     assert.ok(view.message.includes(missing));
     await fs.mkdir(missing);
     await fs.writeFile(

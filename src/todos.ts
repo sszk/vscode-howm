@@ -1,3 +1,4 @@
+import { modelText } from "./localization";
 import * as vscode from "vscode";
 import { dateString, reminderList } from "./core";
 import { Store } from "./storage";
@@ -131,21 +132,38 @@ export class TodoProvider
   private updateMessage() {
     if (!this.view || this.disposed) return;
     const notes = this.store.all();
-    this.view.description = `${reminderList(notes, this.today).unfinished.length}件`;
-    const root = this.store.root?.fsPath || "未設定";
+    this.view.description = vscode.l10n.t(
+      "{0} items",
+      reminderList(notes, this.today).unfinished.length,
+    );
+    const root = this.store.root?.fsPath || vscode.l10n.t("Not set");
     this.view.message = this.store.loading
-      ? "Todoと予定を読み込み中…"
+      ? vscode.l10n.t("Loading Todos and Schedule…")
       : this.store.error
-        ? `${this.store.error}\n保存先: ${root}\n更新ボタンで再試行するか、保存先を選び直してください。`
+        ? vscode.l10n.t(
+            "{0}\nNotes folder: {1}\nClick Refresh to retry or select another notes folder.",
+            this.store.error,
+            root,
+          )
         : !this.groups.length
-          ? `${emptyTodoReason(notes)}\n保存先: ${root}`
+          ? vscode.l10n.t(
+              "{0}\nNotes folder: {1}",
+              modelText(emptyTodoReason(notes)),
+              root,
+            )
           : this.store.skipped
-            ? `サイズ上限を超える${this.store.skipped}件は読み込み対象外です。`
+            ? vscode.l10n.t(
+                "{0} files exceeding the size limit were skipped.",
+                this.store.skipped,
+              )
             : undefined;
   }
   private showError(error: unknown) {
     if (this.view && !this.disposed)
-      this.view.message = `読み込みに失敗しました: ${String(error)}\n更新ボタンで再試行してください。`;
+      this.view.message = vscode.l10n.t(
+        "Failed to load: {0}\nClick Refresh to retry.",
+        String(error),
+      );
   }
   async refresh() {
     await this.store.initialize();
@@ -157,17 +175,17 @@ export class TodoProvider
   getTreeItem(node: TodoNode): vscode.TreeItem {
     if (node.type === "group") {
       const item = new vscode.TreeItem(
-        node.label,
+        modelText(node.label),
         node.expanded
           ? vscode.TreeItemCollapsibleState.Expanded
           : vscode.TreeItemCollapsibleState.Collapsed,
       );
       item.id = node.id;
-      item.description = `${node.entries.length}件`;
+      item.description = vscode.l10n.t("{0} items", node.entries.length);
       return item;
     }
     const r = node.reminder;
-    const item = new vscode.TreeItem(r.text || "本文なし");
+    const item = new vscode.TreeItem(r.text || vscode.l10n.t("No text"));
     item.id = node.id;
     item.description = `${r.date} ${r.kind}`;
     item.tooltip = `${node.note.title}\n${vscode.Uri.parse(node.note.uri).fsPath}:${r.line + 1}\n${r.date} ${r.kind}${r.days} ${r.text}`;
@@ -183,7 +201,7 @@ export class TodoProvider
     );
     item.command = {
       command: "howm.openReminder",
-      title: "元のメモを開く",
+      title: vscode.l10n.t("Open Source Note"),
       arguments: [node],
     };
     return item;

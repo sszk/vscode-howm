@@ -18,7 +18,12 @@ exports.run = async (root) => {
   ).packageJSON;
   assert.ok(
     manifest.contributes.commands.some(
-      (c) => c.command === "howm.inputDate" && c.title === "howm: 日付を入力",
+      (c) =>
+        c.command === "howm.inputDate" &&
+        (typeof c.title === "string" ? c.title : c.title.value) ===
+          require(
+            `../package.nls${vscode.env.language === "ja" ? ".ja" : ""}.json`,
+          )["howm.inputDate.title"],
     ),
   );
   const today = dateString();

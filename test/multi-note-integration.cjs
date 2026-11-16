@@ -123,7 +123,11 @@ exports.run = async (base) => {
     assert.equal(regex.links.length, 2);
     assert.ok(!regex.doc.getText().includes("Ignored preamble"));
     for (const link of regex.links)
-      assert.ok(regex.doc.getText(link.range).startsWith("元のメモを開く:"));
+      assert.ok(
+        regex.doc
+          .getText(link.range)
+          .startsWith(vscode.l10n.t("Open source note: {0}", "")),
+      );
     const target = regex.links[1].target;
     await vscode.commands.executeCommand(
       target.path,

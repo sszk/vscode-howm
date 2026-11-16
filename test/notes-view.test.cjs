@@ -19,6 +19,7 @@ const original = Module._load;
 Module._load = function (name, ...args) {
   if (name === "vscode")
     return {
+      ...require("./localization-fixture.cjs").localization(),
       EventEmitter: Emitter,
       Range: class {
         constructor(sl, sc, el, ec) {

@@ -71,16 +71,19 @@ export class OnThisDayProvider
     this.timer = undefined;
     if (this.disposed || !this.view?.visible) return;
     this.groups = this.enabled ? onThisDay(this.store.all(), this.clock()) : [];
-    this.view.description = `${this.groups.reduce((sum, group) => sum + group.notes.length, 0)}件`;
+    this.view.description = vscode.l10n.t(
+      "{0} items",
+      this.groups.reduce((sum, group) => sum + group.notes.length, 0),
+    );
     this.view.message = !this.enabled
-      ? "過去の今日は無効です。"
+      ? vscode.l10n.t("On This Day is disabled.")
       : this.store.error ||
         (this.store.loading
-          ? "読み込み中…"
+          ? vscode.l10n.t("Loading…")
           : !this.store.root
-            ? "メモの保存先を選択してください。"
+            ? vscode.l10n.t("Select a notes folder.")
             : !this.groups.length
-              ? "過去の今日のメモはありません。"
+              ? vscode.l10n.t("No notes from this day in previous years.")
               : undefined);
     this.events.fire(undefined);
   }
@@ -101,17 +104,19 @@ export class OnThisDayProvider
   getTreeItem(node: AnniversaryNode): vscode.TreeItem {
     if ("year" in node) {
       const item = new vscode.TreeItem(
-        `${node.year}年（${node.yearsAgo}年前）`,
+        node.yearsAgo === 1
+          ? vscode.l10n.t("{0} (1 year ago)", node.year)
+          : vscode.l10n.t("{0} ({1} years ago)", node.year, node.yearsAgo),
         vscode.TreeItemCollapsibleState.Expanded,
       );
       item.id = String(node.year);
-      item.description = `${node.notes.length}件`;
+      item.description = vscode.l10n.t("{0} items", node.notes.length);
       return item;
     }
     const item = noteTreeItem(node);
     item.command = {
       command: "howm.openDiscoveryNote",
-      title: "開く",
+      title: vscode.l10n.t("Open"),
       arguments: [node],
     };
     return item;

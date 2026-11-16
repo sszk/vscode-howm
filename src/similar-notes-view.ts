@@ -1,3 +1,4 @@
+import { uiLanguage } from "./localization";
 import * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { Note, noteDisplayDate } from "./core";
@@ -132,7 +133,7 @@ export class SimilarNotesViewProvider
 
   private html() {
     const nonce = randomBytes(16).toString("hex");
-    return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    return `<!DOCTYPE html><html lang="${uiLanguage()}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
     <style nonce="${nonce}">
     body{margin:0;padding:0 10px 6px;color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:var(--vscode-font-size)}
@@ -144,7 +145,7 @@ export class SimilarNotesViewProvider
     </style></head><body><p id="status" role="status"></p><main id="results"></main>
     <script nonce="${nonce}">
     const vscode=acquireVsCodeApi(),results=document.getElementById('results');let renderId='';
-    ${pinUpdateScript}
+    ${pinUpdateScript()}
     results.addEventListener('click',event=>{
       const button=event.target.closest('button');if(!button)return;
       const pin=button.dataset.pinId;event.stopPropagation();

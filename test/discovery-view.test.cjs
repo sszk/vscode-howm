@@ -26,6 +26,7 @@ const original = Module._load;
 Module._load = function (name, ...args) {
   if (name === "vscode")
     return {
+      ...require("./localization-fixture.cjs").localization(),
       EventEmitter: Emitter,
       TreeItem: class {
         constructor(label, collapsibleState) {

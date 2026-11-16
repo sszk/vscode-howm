@@ -1,3 +1,4 @@
+import { uiLanguage, calendarMonth, calendarWeekdays } from "./localization";
 import * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { Store } from "./storage";
@@ -147,10 +148,7 @@ export class CalendarProvider
         .get<string>("calendarWeekStart", "sunday") === "monday"
         ? "monday"
         : "sunday";
-    const weekdays =
-      weekStart === "monday"
-        ? ["月", "火", "水", "木", "金", "土", "日"]
-        : ["日", "月", "火", "水", "木", "金", "土"];
+    const weekdays = calendarWeekdays(weekStart);
     const days = calendarDays(this.store.all());
     const nonce = randomBytes(16).toString("hex");
     this.renderId = nonce;
@@ -161,7 +159,7 @@ export class CalendarProvider
         const tooltip = day?.reminders
           .map(
             ({ note, reminder }) =>
-              `${reminder.kind} ${reminder.text || "本文なし"} — ${note.title}`,
+              `${reminder.kind} ${reminder.text || vscode.l10n.t("No text")} — ${note.title}`,
           )
           .join("\n");
         return `<button class="day ${day?.reminders.length ? "todo" : ""} ${date === this.today ? "today" : ""} ${date === this.selected ? "selected" : ""}"
@@ -175,11 +173,11 @@ export class CalendarProvider
     const status =
       this.store.error ||
       (this.store.loading
-        ? "読み込み中…"
+        ? vscode.l10n.t("Loading…")
         : !this.store.root
-          ? "メモの保存先を選択してください。"
+          ? vscode.l10n.t("Select a notes folder.")
           : "");
-    this.view.webview.html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+    this.view.webview.html = `<!DOCTYPE html><html lang="${uiLanguage()}"><head><meta charset="UTF-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
       <style nonce="${nonce}">
@@ -199,10 +197,10 @@ export class CalendarProvider
       h2{font-size:inherit;margin:10px 0 4px}.note{display:block;text-align:left;width:100%;padding:4px 6px;overflow-wrap:anywhere;white-space:pre-line}.note:hover{background:var(--vscode-list-hoverBackground)}
       p{margin:6px 0;color:var(--vscode-descriptionForeground)}
       </style></head><body>
-      <header><button data-delta="-1" aria-label="前月">‹</button><strong>${this.month.replace("-", "年")}月</strong><button data-delta="1" aria-label="翌月">›</button><button id="today">今日</button></header>
+      <header><button data-delta="-1" aria-label="${escape(vscode.l10n.t("Previous Month"))}">‹</button><strong>${escape(calendarMonth(this.month))}</strong><button data-delta="1" aria-label="${escape(vscode.l10n.t("Next Month"))}">›</button><button id="today">${escape(vscode.l10n.t("Today"))}</button></header>
       <div class="grid">${weekdays.map((d) => `<span class="weekday">${d}</span>`).join("")}${cells}</div>
       ${status ? `<p role="status">${escape(status)}</p>` : ""}
-      <h2>${this.selected} のメモ (${notes.length})</h2>
+      <h2>${escape(vscode.l10n.t("Notes for {0} ({1})", this.selected, notes.length))}</h2>
       ${
         notes.length
           ? notes
@@ -213,11 +211,11 @@ export class CalendarProvider
                   : button;
               })
               .join("")
-          : "<p>該当するメモはありません。</p>"
+          : `<p>${escape(vscode.l10n.t("No notes for this date."))}</p>`
       }
       <script nonce="${nonce}">
       const vscode=acquireVsCodeApi();
-      ${pinUpdateScript}
+      ${pinUpdateScript()}
       const state=vscode.getState();
       if(state?.focus){
         const button=Array.from(document.querySelectorAll('button')).find(b=>b.dataset.date===state.focus);

@@ -72,7 +72,11 @@ exports.run = async (base) => {
     await provider.update();
     assert.equal(results().length, 1);
     assert.equal(results()[0].passage.startLine, 4);
-    assert.match(posted.at(-1).html, /2025-11-04 · 5行目/);
+    assert.ok(
+      posted
+        .at(-1)
+        .html.includes(vscode.l10n.t("{0} · Line {1}", "2025-11-04", 5)),
+    );
     await provider.open(results()[0]);
     assert.equal(
       vscode.window.activeTextEditor.document.uri.toString(),

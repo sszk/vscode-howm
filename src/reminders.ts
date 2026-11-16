@@ -16,7 +16,9 @@ export async function completeReminder(
   } catch {
     await store.initialize();
     void vscode.window.showInformationMessage(
-      "元のメモが見つかりません。一覧を更新しました。",
+      vscode.l10n.t(
+        "The source note was not found. The list has been refreshed.",
+      ),
     );
     return false;
   }
@@ -30,7 +32,9 @@ export async function completeReminder(
   ) {
     await store.read(uri);
     void vscode.window.showInformationMessage(
-      "メモが変更されています。一覧の更新後にもう一度完了操作をしてください。",
+      vscode.l10n.t(
+        "The note has changed. Refresh the list and try completing it again.",
+      ),
     );
     return false;
   }

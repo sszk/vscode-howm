@@ -76,7 +76,7 @@ exports.run = async (base) => {
   try {
     provider.resolveWebviewView(view);
     await receive({ type: "ready", query: "milk" });
-    assert.equal(latest().count, "2行 · 2メモ");
+    assert.equal(latest().count, vscode.l10n.t("{0} lines · {1} notes", 2, 2));
     assert.ok(!latest().html.includes("Ignored milk"));
     const second = store.all()[1];
     const id = JSON.stringify([second.id, 6]);
@@ -136,13 +136,13 @@ exports.run = async (base) => {
       "cleared search returns to heading navigation",
     );
     await receive({ type: "search", query: "absent" });
-    assert.match(latest().html, /一致する行がありません/);
+    assert.ok(latest().html.includes(vscode.l10n.t("No matching lines.")));
 
     const external = vscode.Uri.file(path.join(root, "external.md"));
     await receive({ type: "search", query: "External" });
     await fs.writeFile(external.fsPath, "# External\nExternal match\n");
     await until(
-      () => latest().count === "2行 · 1メモ",
+      () => latest().count === vscode.l10n.t("{0} lines · {1} notes", 2, 1),
       "external creation must update an active query",
     );
     const externalNote = store.files.get(external.toString())[0];
@@ -156,12 +156,12 @@ exports.run = async (base) => {
       "stale disk results must not move the active editor",
     );
     await until(
-      () => latest().count === "1行 · 1メモ",
+      () => latest().count === vscode.l10n.t("{0} lines · {1} notes", 1, 1),
       "external edits must update query matches",
     );
     await fs.unlink(external.fsPath);
     await until(
-      () => latest().count === "0行 · 0メモ",
+      () => latest().count === vscode.l10n.t("{0} lines · {1} notes", 0, 0),
       "external deletion must remove all matching rows",
     );
     store.watcher.dispose();
@@ -169,7 +169,7 @@ exports.run = async (base) => {
     view.visible = true;
     visibility.fire({ visible: true });
     await until(
-      () => latest().count === "1行 · 1メモ",
+      () => latest().count === vscode.l10n.t("{0} lines · {1} notes", 1, 1),
       "showing the view must restore missed external changes without clearing the query",
     );
     console.log(

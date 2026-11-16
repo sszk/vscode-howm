@@ -18,10 +18,14 @@ export async function insertWindowsPathLink() {
   const link = windowsPathLink(input);
   if (link === undefined) {
     void vscode.window.showErrorMessage(
-      "howm: 有効なWindows絶対パス、UNCパス、またはfile URIを指定してください（URIのパーセントエンコードは有効なUTF-8が必要です）",
+      vscode.l10n.t(
+        "howm: Enter a valid absolute Windows path, UNC path, or file URI (percent encoding must be valid UTF-8).",
+      ),
     );
     return;
   }
   if (!(await e.edit((b) => b.replace(selection, link))))
-    void vscode.window.showErrorMessage("howm: リンクを挿入できませんでした");
+    void vscode.window.showErrorMessage(
+      vscode.l10n.t("howm: Could not insert the link"),
+    );
 }

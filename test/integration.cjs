@@ -82,7 +82,11 @@ exports.run = async () => {
     );
     assert.equal(sourceLinks.length, 3, virtual.getText());
     for (const link of sourceLinks)
-      assert.ok(virtual.getText(link.range).startsWith("元のメモを開く:"));
+      assert.ok(
+        virtual
+          .getText(link.range)
+          .startsWith(vscode.l10n.t("Open source note: {0}", "")),
+      );
 
     const watcherStore = new Store();
     await watcherStore.initialize();

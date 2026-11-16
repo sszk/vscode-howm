@@ -17,7 +17,10 @@ exports.run = async (root) => {
     manifest.contributes.commands.some(
       (c) =>
         c.command === "howm.insertWindowsPathLink" &&
-        c.title === "howm: Windowsパスをリンクとして挿入",
+        (typeof c.title === "string" ? c.title : c.title.value) ===
+          require(
+            `../package.nls${vscode.env.language === "ja" ? ".ja" : ""}.json`,
+          )["howm.insertWindowsPathLink.title"],
     ),
   );
   editor.selection = new vscode.Selection(1, 0, 1, input.length);

@@ -1,3 +1,4 @@
+import { errorMessage } from "./localization";
 import * as vscode from "vscode";
 import { Store } from "./storage";
 import { CalendarProvider } from "./calendar";
@@ -46,9 +47,7 @@ export async function activate(context: vscode.ExtensionContext) {
             return await fn(...args);
           } catch (error) {
             output.appendLine(String(error));
-            void vscode.window.showErrorMessage(
-              `howm: ${error instanceof Error ? error.message : String(error)}`,
-            );
+            void vscode.window.showErrorMessage(`howm: ${errorMessage(error)}`);
           }
         },
       ),
@@ -67,7 +66,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // resolve an old row to a different section at that line.
     if (!current || current.source.text !== snapshot.source.text) {
       void vscode.window.showInformationMessage(
-        "メモ一覧が更新されています。もう一度選択してください。",
+        vscode.l10n.t("The note list has changed. Select a note again."),
       );
       return;
     }
@@ -78,7 +77,7 @@ export async function activate(context: vscode.ExtensionContext) {
       canSelectFolders: true,
       canSelectFiles: false,
       canSelectMany: false,
-      openLabel: "howmの保存先",
+      openLabel: vscode.l10n.t("Select howm Notes Folder"),
     });
     if (chosen) {
       await vscode.workspace
@@ -93,7 +92,7 @@ export async function activate(context: vscode.ExtensionContext) {
   };
   const ensureRoot = async () => {
     if (!store.root) await configure();
-    if (!store.root) throw new Error("メモの保存先を選択してください");
+    if (!store.root) throw new Error(vscode.l10n.t("Select a notes folder"));
     return store.root;
   };
   async function create(title: string, body = "") {
@@ -131,7 +130,7 @@ export async function activate(context: vscode.ExtensionContext) {
       edit.createFile(uri, { overwrite: false });
       edit.insert(uri, new vscode.Position(0, 0), text);
       if (!(await vscode.workspace.applyEdit(edit)))
-        throw new Error("メモを作成できませんでした");
+        throw new Error(vscode.l10n.t("Could not create the note"));
       const doc = await vscode.workspace.openTextDocument(uri);
       await doc.save();
       await store.read(uri);
@@ -144,17 +143,21 @@ export async function activate(context: vscode.ExtensionContext) {
   async function pickNotes(notes: Note[], title: string) {
     lastResults = notes;
     if (!notes.length) {
-      void vscode.window.showInformationMessage("一致するメモがありません");
+      void vscode.window.showInformationMessage(
+        vscode.l10n.t("No matching notes"),
+      );
       return;
     }
     const picker = vscode.window.createQuickPick<
       vscode.QuickPickItem & { note?: Note; concat?: boolean }
     >();
     picker.title = title;
-    picker.placeholder = "タイトルで絞り込み · 選択中のメモをプレビュー";
+    picker.placeholder = vscode.l10n.t(
+      "Filter by title · Preview the selected note",
+    );
     picker.matchOnDescription = true;
     picker.items = [
-      { label: "$(book) すべて連結して読む", concat: true },
+      { label: vscode.l10n.t("$(book) Read All Notes Together"), concat: true },
       ...notes.map((note) => ({
         label: note.title,
         description: `${vscode.Uri.parse(note.uri).path}:${note.startLine + 1}`,
@@ -232,11 +235,11 @@ export async function activate(context: vscode.ExtensionContext) {
   async function concatenate(notes = lastResults) {
     if (!notes.length) {
       void vscode.window.showInformationMessage(
-        "先に検索または一覧を開いてください",
+        vscode.l10n.t("Open a search or note list first"),
       );
       return;
     }
-    const lines = ["# howm — 連結表示", ""];
+    const lines = [`# ${vscode.l10n.t("howm — Combined Notes")}`, ""];
     const links: { range: vscode.Range; uri: vscode.Uri }[] = [];
     const uri = vscode.Uri.parse(`howm:/reading-${++virtualId}.md`);
     for (const [index, note] of notes.entries()) {
@@ -244,7 +247,14 @@ export async function activate(context: vscode.ExtensionContext) {
         `command:howm.openVirtualNote?${encodeURIComponent(JSON.stringify([uri.toString(), index]))}`,
       );
       const line = lines.length;
-      lines.push(`元のメモを開く: ${note.title}`, "", note.text, "", "---", "");
+      lines.push(
+        vscode.l10n.t("Open source note: {0}", note.title),
+        "",
+        note.text,
+        "",
+        "---",
+        "",
+      );
       links.push({
         range: new vscode.Range(line, 0, line, lines[line].length),
         uri: target,
@@ -257,7 +267,7 @@ export async function activate(context: vscode.ExtensionContext) {
         offset,
         0,
         offset,
-        `元のメモを開く: ${notes[i].title}`.length,
+        vscode.l10n.t("Open source note: {0}", notes[i].title).length,
       );
       offset += 6 + notes[i].text.split("\n").length - 1;
     }
@@ -271,8 +281,12 @@ export async function activate(context: vscode.ExtensionContext) {
     query =
       query ??
       (await vscode.window.showInputBox({
-        prompt: regex ? "正規表現で全文検索（JavaScript構文）" : "全文検索",
-        placeHolder: "検索する言葉",
+        prompt: regex
+          ? vscode.l10n.t(
+              "Search all text with a regular expression (JavaScript syntax)",
+            )
+          : vscode.l10n.t("Search All Text"),
+        placeHolder: vscode.l10n.t("Search terms"),
       }));
     if (query === undefined) return;
     const results = regex
@@ -288,7 +302,14 @@ export async function activate(context: vscode.ExtensionContext) {
             .filter((x) => x.query !== query || x.regex !== regex),
         ].slice(0, 50),
       );
-    await pickNotes(results, `howm: ${query || "すべて"} (${results.length})`);
+    await pickNotes(
+      results,
+      vscode.l10n.t(
+        "howm: {0} ({1})",
+        query || vscode.l10n.t("All"),
+        results.length,
+      ),
+    );
   }
   async function follow(target: string, note?: Note) {
     if (
@@ -428,8 +449,10 @@ export async function activate(context: vscode.ExtensionContext) {
     if (notesView && (await notesView.focusSearch())) return true;
     void vscode.window
       .showInformationMessage(
-        "howm: メモ一覧の新しい表示形式を反映するため、Developer: Reload Window（ウィンドウの再読み込み）を実行してください。",
-        "ウィンドウを再読み込み",
+        vscode.l10n.t(
+          "howm: Run Developer: Reload Window to load the new notes view.",
+        ),
+        vscode.l10n.t("Reload Window"),
       )
       .then((choice) =>
         choice
@@ -524,8 +547,10 @@ export async function activate(context: vscode.ExtensionContext) {
   const offerWindowReload = () => {
     void vscode.window
       .showInformationMessage(
-        "howm: Todoビューの登録がまだ反映されていません。Developer: Reload Window（ウィンドウの再読み込み）を実行してください。",
-        "ウィンドウを再読み込み",
+        vscode.l10n.t(
+          "howm: The Todo view is not registered yet. Run Developer: Reload Window.",
+        ),
+        vscode.l10n.t("Reload Window"),
       )
       .then((choice) =>
         choice
@@ -580,7 +605,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const title =
       providedTitle ??
       (await vscode.window.showInputBox({
-        prompt: "タイトル（空でも作成できます）",
+        prompt: vscode.l10n.t("Title (can be empty)"),
         value:
           selection.split("\n")[0] ||
           vscode.workspace
@@ -590,14 +615,18 @@ export async function activate(context: vscode.ExtensionContext) {
     if (title !== undefined) await create(title);
   });
   register("capture", async () => {
-    const body = await vscode.window.showInputBox({ prompt: "速記する内容" });
+    const body = await vscode.window.showInputBox({
+      prompt: vscode.l10n.t("Quick capture text"),
+    });
     if (body) await create("", body);
   });
   register("search", (q?: string) => doSearch(q));
   register("searchRegex", (q?: string) => doSearch(q, true));
-  register("list", () => pickNotes(store.all(), "howm: メモ一覧"));
+  register("list", () =>
+    pickNotes(store.all(), vscode.l10n.t("howm: List Notes")),
+  );
   register("recent", () =>
-    pickNotes(store.all().slice(0, 50), "howm: 最近の50件"),
+    pickNotes(store.all().slice(0, 50), vscode.l10n.t("howm: 50 Recent Notes")),
   );
   register("openLink", (target: string, uri: string) =>
     follow(target, store.files.get(uri)?.[0]),
@@ -619,7 +648,7 @@ export async function activate(context: vscode.ExtensionContext) {
     if (link) await follow(link.target, n);
     else
       void vscode.window.showInformationMessage(
-        "カーソル位置にhowmリンクがありません",
+        vscode.l10n.t("No howm link at the cursor"),
       );
   });
   register("related", async () => {
@@ -631,7 +660,7 @@ export async function activate(context: vscode.ExtensionContext) {
     );
     if (!n) return;
     const candidates = relatedNotes(n, store.all(), store.keywords());
-    await pickNotes(candidates, "howm: 関連メモ");
+    await pickNotes(candidates, vscode.l10n.t("howm: Related Notes"));
   });
   register("concatenate", () => concatenate());
   register("random", async () => {
@@ -644,10 +673,12 @@ export async function activate(context: vscode.ExtensionContext) {
       .map((h) => ({
         ...h,
         label: h.query,
-        description: h.regex ? "正規表現" : "固定文字列",
+        description: h.regex
+          ? vscode.l10n.t("Regular expression")
+          : vscode.l10n.t("Literal text"),
       }));
     const selected = await vscode.window.showQuickPick(items, {
-      placeHolder: "検索履歴",
+      placeHolder: vscode.l10n.t("Search History"),
     });
     if (selected) await doSearch(selected.query, selected.regex);
   });
@@ -659,11 +690,11 @@ export async function activate(context: vscode.ExtensionContext) {
     const today = new Date();
     const input = await vscode.window.showInputBox({
       value,
-      prompt: "日付を入力",
-      placeHolder: "例: +7, 15, 12/5, 2027/2/20, mon",
+      prompt: vscode.l10n.t("Enter a date"),
+      placeHolder: vscode.l10n.t("Examples: +7, 15, 12/5, 2027/2/20, mon"),
       validateInput: (s) =>
         parseHowmDate(s, today) === undefined
-          ? "有効な日付を入力してください"
+          ? vscode.l10n.t("Enter a valid date")
           : undefined,
     });
     return input === undefined ? undefined : parseHowmDate(input, today);
@@ -685,7 +716,9 @@ export async function activate(context: vscode.ExtensionContext) {
         for (const selection of selections) b.replace(selection, `[${date}]`);
       }))
     )
-      void vscode.window.showErrorMessage("howm: 日付を挿入できませんでした");
+      void vscode.window.showErrorMessage(
+        vscode.l10n.t("howm: Could not insert the date"),
+      );
   });
   register("insertKeyword", async () => {
     const e = vscode.window.activeTextEditor;
@@ -699,7 +732,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Window,
-        title: "howm: Todoと予定を読み込み中",
+        title: vscode.l10n.t("howm: Loading Todos and Schedule"),
       },
       () => store.initialize(),
     );
@@ -721,54 +754,68 @@ export async function activate(context: vscode.ExtensionContext) {
     })[] = [];
     if (todos.length)
       items.push(
-        { label: "Todo（優先度順）", kind: vscode.QuickPickItemKind.Separator },
+        {
+          label: vscode.l10n.t("Todos (by Priority)"),
+          kind: vscode.QuickPickItemKind.Separator,
+        },
         ...todos.map(row),
       );
     if (schedule.length)
       items.push(
         {
-          label: "これからの予定・締切",
+          label: vscode.l10n.t("Upcoming Events and Deadlines"),
           kind: vscode.QuickPickItemKind.Separator,
         },
         ...schedule.map(row),
       );
     if (!items.length) {
       const reason = !store.noteCount
-        ? "対象のMarkdownメモが読み込まれていません。保存先を確認してください。"
+        ? vscode.l10n.t("No Markdown notes are loaded. Check the notes folder.")
         : !all.length
-          ? "リマインダが見つかりません。本文に [YYYY-MM-DD]+ 内容 のように記述してください（コードブロック内は対象外）。"
+          ? vscode.l10n.t(
+              "No reminders found. Add [YYYY-MM-DD]+ text to a note outside code blocks.",
+            )
           : !unfinished.length
-            ? "リマインダはすべて完了済みです。"
-            : "開始前のTodo、または過去の予定だけが見つかりました。";
+            ? vscode.l10n.t("All reminders are complete.")
+            : vscode.l10n.t("Only future Todos or past events were found.");
       items.push({ label: reason, alwaysShow: true });
     }
     if (hidden.length)
       items.push(
         {
-          label: "開始前のTodo・過去の予定を確認",
+          label: vscode.l10n.t("Review Future Todos and Past Events"),
           kind: vscode.QuickPickItemKind.Separator,
         },
         ...hidden.map(row),
       );
     items.push(
-      { label: "設定と更新", kind: vscode.QuickPickItemKind.Separator },
       {
-        label: "$(folder-opened) メモの保存先を選択",
-        description: store.root?.fsPath || "未設定",
+        label: vscode.l10n.t("Settings and Refresh"),
+        kind: vscode.QuickPickItemKind.Separator,
+      },
+      {
+        label: vscode.l10n.t("$(folder-opened) Select Notes Folder"),
+        description: store.root?.fsPath || vscode.l10n.t("Not set"),
         action: "configure",
         alwaysShow: true,
       },
       {
-        label: "$(refresh) 索引を再構築して再表示",
+        label: vscode.l10n.t("$(refresh) Rebuild Index and Refresh"),
         action: "refresh",
         alwaysShow: true,
       },
     );
     const chosen = await vscode.window.showQuickPick(items, {
-      title: `howm: Todoと予定 — ${today} / メモ${store.noteCount}件 / リマインダ${all.length}件`,
+      title: vscode.l10n.t(
+        "howm: Todos and Schedule — {0} / {1} notes / {2} reminders",
+        today,
+        store.noteCount,
+        all.length,
+      ),
       matchOnDescription: true,
-      placeHolder:
-        "選択すると元の行へ移動。完了は howm: この行のリマインダを完了",
+      placeHolder: vscode.l10n.t(
+        "Select an item to open its source line. To complete it, run howm: Complete Reminder on This Line.",
+      ),
     });
     if (chosen?.note) await open(chosen.note, chosen.line);
     else if (chosen?.action) {
@@ -789,7 +836,7 @@ export async function activate(context: vscode.ExtensionContext) {
     );
     if (!r) {
       void vscode.window.showInformationMessage(
-        "この行に未完了のリマインダがありません",
+        vscode.l10n.t("No unfinished reminder on this line"),
       );
       return;
     }
@@ -821,31 +868,39 @@ export async function activate(context: vscode.ExtensionContext) {
         ),
       );
       if (!applied)
-        void vscode.window.showErrorMessage("howm: 日付を変更できませんでした");
+        void vscode.window.showErrorMessage(
+          vscode.l10n.t("howm: Could not change the date"),
+        );
     }
   });
   register("refresh", async () => {
     await store.initialize();
     void vscode.window.showInformationMessage(
-      `howm: ${store.noteCount}件を索引化${store.skipped ? `（サイズ超過 ${store.skipped}件）` : ""}`,
+      store.skipped
+        ? vscode.l10n.t(
+            "howm: Indexed {0} notes ({1} files skipped due to size)",
+            store.noteCount,
+            store.skipped,
+          )
+        : vscode.l10n.t("howm: Indexed {0} notes", store.noteCount),
     );
   });
   register("home", async () => {
     const choices = [
-      ["新しいメモ", "create"],
-      ["速記", "capture"],
-      ["全文検索", "search"],
-      ["最近のメモ", "recent"],
-      ["メモ一覧", "list"],
-      ["Todoと予定（サイドバー）", "showTodos"],
-      ["Todoと予定（パレット）", "reminders"],
-      ["検索履歴", "history"],
-      ["ランダムなメモ", "random"],
-      ["保存先を選択", "configure"],
+      [vscode.l10n.t("Create Note"), "create"],
+      [vscode.l10n.t("Capture Note"), "capture"],
+      [vscode.l10n.t("Search All Text"), "search"],
+      [vscode.l10n.t("Show Recent Notes"), "recent"],
+      [vscode.l10n.t("List Notes"), "list"],
+      [vscode.l10n.t("Open Todos and Schedule Sidebar"), "showTodos"],
+      [vscode.l10n.t("Show Todos and Schedule Picker"), "reminders"],
+      [vscode.l10n.t("Search History"), "history"],
+      [vscode.l10n.t("Open Random Note"), "random"],
+      [vscode.l10n.t("Select Notes Folder"), "configure"],
     ];
     const chosen = await vscode.window.showQuickPick(
       choices.map(([label, command]) => ({ label, command })),
-      { title: `howm — ${store.noteCount} notes` },
+      { title: vscode.l10n.t("howm — {0} notes", store.noteCount) },
     );
     if (chosen) await vscode.commands.executeCommand(`howm.${chosen.command}`);
   });

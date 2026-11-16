@@ -5,7 +5,12 @@ const window = {};
 const clipboard = {};
 const original = Module._load;
 Module._load = function (name, ...args) {
-  if (name === "vscode") return { window, env: { clipboard } };
+  if (name === "vscode")
+    return {
+      ...require("./localization-fixture.cjs").localization(),
+      window,
+      env: { clipboard },
+    };
   return original.call(this, name, ...args);
 };
 const { insertWindowsPathLink } = require("../dist/windows-path-link-command");

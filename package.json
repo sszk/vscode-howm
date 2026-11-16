@@ -2,8 +2,12 @@
   "name": "markdown-howm",
   "displayName": "%howm.displayName%",
   "description": "%howm.description%",
-  "version": "0.5.18",
+  "version": "0.5.19",
   "publisher": "local-howm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sszk/vscode-howm.git"
+  },
   "license": "MIT",
   "engines": {
     "vscode": "^1.95.0"

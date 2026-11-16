@@ -1,99 +1,101 @@
 # Markdown howm
 
-Markdownで断片的に書き、検索とリンクでまとめて読むVS Code拡張です。
+English | [日本語](README.ja.md)
 
-## インストール
+A VS Code extension for writing small Markdown notes and reading them together through search and links.
 
-`npm install`、`npm run package`でVSIXを生成します。VS Codeの「拡張機能: VSIXからのインストール」で選択してください。開発中はこのフォルダをVS Codeで開き、F5で起動できます。
+## Installation
 
-最初にフォルダを開いて `howm: 新しいメモ` を実行します。標準ではそのフォルダの `howm/` に保存します。既存メモを使う場合は `howm: メモの保存先を選択` を実行してください。ワークスペースを開いていない場合も保存先を指定できます。
+Run `npm install` followed by `npm run package` to build a VSIX. In VS Code, run **Extensions: Install from VSIX...** and select the generated file. For development, open this folder in VS Code and press F5.
 
-## 使い方
+Open a folder and run `howm: Create Note`. By default, notes are saved in its `howm/` subfolder. To use existing notes, run `howm: Select Notes Folder`. You can also select a notes folder without opening a workspace.
 
-- `howm: ホーム`：各機能への入口。
-- `howm: 新しいメモ`：タイトルの初期値は「メモ」で、`howm.defaultTitle`で変更できます。選択中のテキストがあればタイトル候補にします。タイトルは変更でき、空欄でも作成できます。
-- `howm: 速記`：短い内容をすぐ保存。長文は作成後にエディタで編集します。
-- `howm: 全文検索`：本文全体を大文字・小文字を区別せず固定文字列検索。結果を選ぶとプレビューし、Enterで開きます。
-- `howm: 正規表現検索`：JavaScript正規表現で検索。`iu`フラグ（大文字・小文字を区別しないUnicode対応）を使用し、検索式は256文字以内です。別スレッドで実行し、2秒で打ち切ります。
-- 検索・一覧の「すべて連結して読む」：複数メモを読み取り専用で連結。各「元のメモを開く」から編集に戻れます。
-- `howm: 関連メモ`：現在のメモの宣言・リンク語句を含む別のメモを表示。
-- `howm: 検索履歴`、`howm: ランダムなメモ`、`howm: 最近のメモ`も利用できます。
+## Usage
 
-パレットで実行した全文検索・正規表現検索は、検索方式とともに最新50件を履歴へ保存します。同じ検索語・検索方式の組み合わせは重複させず、最新の位置へ移します。空の検索語は保存しません。履歴を選ぶと元の検索方式で再検索します。
+- `howm: Open Home`: Open the main menu.
+- `howm: Create Note`: Create a note with an editable title. The default is `メモ` (Japanese for “note”); change it with `howm.defaultTitle`. Selected text takes precedence as the suggested title. You can also leave the title empty.
+- `howm: Capture Note`: Save a short piece of text immediately. Edit longer content in the editor afterward.
+- `howm: Search All Text`: Search the full text of notes using a case-insensitive literal query. Select a result to preview it and press Enter to open it.
+- `howm: Search with Regular Expression`: Search with JavaScript regular expressions using the `iu` flags for case-insensitive Unicode matching. Expressions are limited to 256 characters. Searches run in a separate thread and stop after two seconds.
+- **Read All Notes Together** in a search or note list: Combine notes into a read-only document. Use each **Open source note** link to return to the editable source.
+- `howm: Show Related Notes`: Show other notes containing the current note’s declared keywords or link terms.
+- `howm: Show Search History`, `howm: Open Random Note`, and `howm: Show Recent Notes` are also available.
 
-新規作成は Windows/Linux `Ctrl+Alt+N`、macOS `Cmd+Alt+N`。検索は `Ctrl+Alt+H` / `Cmd+Alt+H`。キーバインドはVS Codeの設定で変更できます。
+Full-text and regular expression searches from the command palette are saved with their search mode in a history of up to 50 entries. Repeating the same query and mode moves it to the top instead of adding a duplicate. Empty queries are not saved. Selecting an entry repeats the search using its original mode.
 
-## メモのピン留め
+Create a note with `Ctrl+Alt+N` on Windows/Linux or `Cmd+Alt+N` on macOS. Search with `Ctrl+Alt+H` or `Cmd+Alt+H`. You can change these shortcuts in VS Code’s keyboard shortcut settings.
 
-メモ一覧・類似メモ・カレンダーのメモ行の右端からピン留めできます。未ピン留めのボタンはホバー時やキーボードで行にフォーカスしたときに表示され、ピン留め済みのボタンは常時表示されます。Tabでボタンに移動し、EnterまたはSpaceでも切り替えられます。
+## Pinning notes
 
-エディタのタイトルバー、右クリックメニュー、コマンドパレットの `Howm: Toggle Pin` からも操作できます。保存先内のMarkdownファイルだけが対象です。通常のメモ一覧ではピン留めを優先し、各グループ内の並び順と検索条件を維持します。類似メモの類似度順とカレンダーの日付分類は変わりません。
+Pin notes using the button at the right edge of a note row in Notes, Similar Notes, or Calendar. Unpinned buttons appear on hover or when the row receives keyboard focus; pinned buttons remain visible. Use Tab to focus a button and Enter or Space to toggle it.
 
-状態は拡張機能の `globalState` に保存され、再起動後も復元されます。ファイル単位の操作なので、1ファイルに複数の見出しがある場合はすべて同じ状態になります。メモの内容や未保存状態は変更しません。VS Codeでの移動・改名はピン留めを引き継ぎ、保存先外への移動や削除は解除します。保存先全体の移動をVS Codeで行った場合もURIを引き継ぎ、保存先設定を移動先に変更すると復元されます。外部アプリでの改名は削除・新規作成として扱われるため、引き継ぎの対象外です。
+You can also use the editor title bar, the editor context menu, or `howm: Toggle Pin` in the command palette. Only Markdown files inside the notes folder are eligible. The regular note list places pinned notes first while preserving the order within each group and the current search filter. Similar Notes keeps its similarity ranking, and Calendar keeps its date grouping.
 
-## Markdownとリンク
+Pin state is stored in the extension’s `globalState` and restored after a restart. Pins apply to files, so all notes in a file share the same state. Pinning does not change note content or save pending edits. Moving or renaming a file in VS Code preserves its pin; moving it outside the notes folder or deleting it removes the pin. Moving the entire notes folder in VS Code also transfers its URI keys; update the notes folder setting to the new location to restore them. Renames made by an external application are treated as deletion and creation, so their pins are not transferred.
+
+## Markdown and links
 
 ```markdown
-# 検索UIのアイデア
+# Ideas for a search UI
 
-<<< 検索UI
+<<< Search UI
 
-候補を選ぶと本文をプレビューしたい。
+Preview the text when selecting a result.
 
-> > > キーボード操作
+>>> Keyboard navigation
 
-[2026-10-15]!7 試作品を作る
+[2026-10-15]!7 Build a prototype
 ```
 
-1ファイルに複数のメモを書けます。`# 見出し` ごとに1メモとして扱い、その見出しから次の最上位見出しの直前までが本文になります。`##` 以下の小見出し、コードブロック内・インデントされたコードの見出しでは分割しません。区切りは `#` 形式のレベル1見出しです。
+A file can contain multiple notes. Each `# Heading` starts a note that continues until the next top-level heading. Subheadings (`##` and below), headings in fenced code blocks, and indented code do not split notes. Only ATX level-one headings using `#` serve as boundaries.
 
 ```markdown
-この部分は索引対象外です。
+This preamble is not indexed.
 
-# 買い物
+# Shopping
 [2026-10-10]
 
-[2026-10-10]+ 牛乳を買う
+[2026-10-10]+ Buy milk
 
-# 読書
+# Reading
 [2026-10-11]
 
-<<< 読書
-読みたい本を整理する。
+<<< Reading
+Organize the books I want to read.
 
-## 気になる本
-この小見出しは「読書」の本文に含まれる。
+## Books of interest
+This subheading belongs to the Reading note.
 ```
 
-この例は「買い物」と「読書」の2メモです。最初の最上位見出しより前の本文は、検索・リンク・日付・リマインダの対象外です。見出しのないファイルは従来どおり全体を1メモとして扱います。空の最上位見出し（`#` または `# `）でも分割し、タイトルにはファイル名を表示します。同じタイトルのメモも個別に扱います。
+This example contains two notes: Shopping and Reading. Text before the first top-level heading is excluded from searches, links, dates, and reminders. A file without a heading is treated as one note. An empty top-level heading (`#` or `# `) still starts a note, using the filename as its displayed title. Notes with identical titles remain separate.
 
-「メモ一覧」・検索・カレンダーでは各メモを個別に表示し、選択するとその見出しへ移動します。検索結果の連結表示には該当メモの本文だけを含めます。日付は各メモ内の日時行から取得し、記載がなければファイル名の日付、更新日の順で補います。関連メモには同じファイル内の別メモも含まれます。
+Notes, search results, and Calendar show each note separately and navigate to its heading when selected. Combined search results include only the matching notes’ text. Each note’s date comes from its own timestamp line, then the filename, then the modification date. Related notes can include other notes in the same file.
 
-既存ファイルへメモを増やす場合は、エディタで `# 見出し` を追加してください。追加や削除は未保存の状態でも一覧へ反映します。`howm: 新しいメモ` と `howm: 速記` は引き続き新しいファイルを作成します。
+To add a note to an existing file, add another `# Heading` in the editor. Additions and deletions appear in lists even before saving. `howm: Create Note` and `howm: Capture Note` continue to create new files.
 
-`>>> キーワード` は全文検索リンクです。`<<< キーワード` はcome-from宣言で、その語句が現れる他のメモにも検索リンクを付け、宣言元を検索結果の上位に表示します。独自記法はそれぞれ単独の行に書きます。リンクをCtrl/Cmdクリックするか `howm: カーソル位置のリンクを開く` で辿れます。宣言追加後、開いている別メモのリンク表示が更新されない場合はタブを開き直してください。
+`>>> keyword` is a full-text search link. `<<< keyword` is a come-from declaration: occurrences of that term in other notes become search links, and the declaring notes rank higher in search results. Put each custom link or declaration on its own line. Follow a link with Ctrl/Cmd-click or `howm: Open Link at Cursor`. If a newly declared keyword does not appear as a link in another open note, reopen that tab.
 
-`>>> ./other.md` のような既存ファイルへのパスも辿れます。Markdown標準リンクはVS Code標準機能で使えます。独自リンクはエディタ内に対応し、Markdownプレビューには追加しません。コードブロック・インラインコードは独自記法の対象外です。全文検索にはコードも含みます。
+You can also follow paths to existing files, such as `>>> ./other.md`. Standard Markdown links work through VS Code’s built-in support. Custom links work in the editor and are not added to Markdown previews. Fenced and inline code are excluded from custom syntax processing, but full-text search still includes code.
 
-保存先内のMarkdownメモでは、`>>> ` または `<<< ` の後に宣言済みキーワードの補完候補を表示します。`howm: キーワードを挿入` では宣言済みキーワードを選び、エディタの選択範囲へ挿入できます。
+In Markdown notes inside the notes folder, typing `>>> ` or `<<< ` offers completion for declared keywords. `howm: Insert Keyword` lets you choose a declared keyword and insert it at the editor selection.
 
-### URLの貼り付けでMarkdownリンクを作成
+### Creating Markdown links by pasting URLs
 
-Markdownエディタで単一のHTTP/HTTPS URLを通常の `Cmd+V` / `Ctrl+V` で貼り付けると、`[example.com](https://example.com)` のようなリンクをすぐに挿入し、ページタイトルを非同期で取得してリンク名を更新します。文字列を選択して貼り付けると、その文字列をリンク名に使い、通信は行いません。設定 `howm.autoLinkOnPaste`（標準 `true`）を `false` にすると無効になります。
+Paste a single HTTP/HTTPS URL into a Markdown editor with `Cmd+V` or `Ctrl+V` to insert a link such as `[example.com](https://example.com)` immediately. The extension fetches the page title asynchronously and updates the link label. If text is selected, that text becomes the label and no request is made. Disable this behavior by setting `howm.autoLinkOnPaste` to `false` (the default is `true`).
 
-`file:` URLも通常の貼り付けでファイル名付きリンクに変換します。例えば `file:///C:/資料/設計%20書.pdf` は `[設計 書.pdf](file:///C:/資料/設計%20書.pdf)` になります。日本語やパーセントエンコードされたファイル名、共有フォルダのURLにも対応します。file URLでは選択中の文字列があってもファイル名をリンク名に使い、ファイルの読み取りやネットワーク通信は行いません。
+Pasting a `file:` URL also creates a link labeled with the filename. For example, `file:///C:/資料/設計%20書.pdf` becomes `[設計 書.pdf](file:///C:/資料/設計%20書.pdf)`. Unicode and percent-encoded filenames and shared-folder URLs are supported. For file URLs, the filename is always used even when text is selected. No file is read and no network request is made.
 
-コードブロック・インラインコード、既存Markdownリンク、複数URLや通常の文章は変換しません。howmの保存先外でもMarkdownなら利用できます。他の貼り付け形式はVS Codeの貼り付けオプションから選択できます。
+Code blocks, inline code, existing Markdown links, multiple URLs, and ordinary prose are not converted. This feature works in Markdown files outside the howm notes folder as well. Choose other paste formats from VS Code’s paste options.
 
-タイトル取得は3秒、リダイレクト5回、HTML取得512KiBまでです。HTMLのtitle、og:titleの順で使用し、取得できなければホスト名を残します。UTF-8のほかHTTPヘッダーやmetaの文字コード指定にも対応します。ローカル・プライベート・リンクローカル宛て（DNS解決結果やリダイレクト先を含む）には通信しません。
+Title fetching is limited to three seconds, five redirects, and 512 KiB of HTML. The HTML `title` takes precedence over `og:title`; if neither can be retrieved, the hostname remains as the label. HTTP header and meta charset declarations are supported in addition to UTF-8. Requests to local, private, and link-local addresses are blocked, including addresses obtained through DNS or redirects.
 
-取得中に編集・削除したリンクやUndo/Redoしたリンクは更新しません。リンク以外の編集では挿入位置を追跡します。タイトル更新は独立したUndo操作として扱い、直前の入力と混在させません。非表示になった文書の後続更新は行いません。JavaScriptの実行が必要なページのタイトルには対応しません。
+Links edited, deleted, or affected by Undo/Redo while a title is being fetched are not updated. Edits elsewhere in the document are tracked to keep the link’s position correct. Title updates are separate Undo operations and are not merged with preceding typing. Pending updates stop when the document is no longer visible. Pages that require JavaScript execution to obtain their title are not supported.
 
-### WindowsパスをMarkdownリンクに変換
+### Converting Windows paths to Markdown links
 
-エディタでパスを選択して `howm: Windowsパスをリンクとして挿入` を実行すると、ファイル名（フォルダならフォルダ名）をリンクテキストとするMarkdownリンクに置き換えます。選択文字列がなければクリップボードのパスをカーソル位置に挿入します。Explorerの「パスのコピー」で付く二重引用符にも対応します。
+Select a path in the editor and run `howm: Insert Windows Path as Link` to replace it with a Markdown link labeled with the filename, or folder name for a folder. Without a selection, the command inserts the clipboard path at the cursor. Double quotes added by Windows Explorer’s **Copy as path** are accepted.
 
-Windows絶対パス、UNCパス、既存の `file:` URIを受け付け、Windows以外のOSでも同じ結果になります。ドライブ相対パス（`C:dir\file.txt`）、通常の相対パス、`https:` などの別のURIはエラーとなり、文書を変更しません。
+Absolute Windows paths, UNC paths, and existing `file:` URIs produce the same results on every operating system. Drive-relative paths (`C:dir\file.txt`), ordinary relative paths, and other URI schemes such as `https:` are rejected without changing the document.
 
 ```text
 C:\共有資料\基本設計\設計 書.pdf
@@ -106,58 +108,58 @@ file:///C:/%E8%B3%87%E6%96%99/%E8%A8%AD%E8%A8%88%20%E6%9B%B8.pdf
 → [設計 書.pdf](file:///C:/資料/設計%20書.pdf)
 ```
 
-日本語などの非ASCII文字は読みやすい状態で残し、半角スペースは `%20`、`#`・`?`・括弧などはURIやMarkdownの構文を壊さない形に変換します。Windowsパス内の `%20` はファイル名の文字列として扱うため `%2520` になります。一方、既存のfile URI内の `%20` は空白を表すので `%20` のままです。不正なパーセントエンコードやUTF-8はエラーとなります。`%2F`・`%5C` はパス区切りに変えず、その区間内に保持します。
+Non-ASCII characters, including Japanese, remain readable. Spaces become `%20`; characters such as `#`, `?`, and parentheses are escaped so they do not break URI or Markdown syntax. In a Windows path, `%20` is a literal part of the filename and becomes `%2520`. In an existing file URI, `%20` already represents a space and remains `%20`. Invalid percent encoding or UTF-8 is rejected. Encoded separators `%2F` and `%5C` remain inside their path segment instead of becoming directory separators.
 
-ファイルの存在確認やネットワーク通信は行いません。挿入・置換はUndo可能で、自動保存しません。生成したリンクはMarkdown標準リンクとして利用できます。
+The command does not check file existence or make network requests. Insertion and replacement support Undo and do not save automatically. The generated links are standard Markdown links.
 
-## リマインダ
+## Reminders
 
-`[YYYY-MM-DD]記号日数 内容` を記述して `howm: Todoサイドバーを開く` を実行します。
+Write `[YYYY-MM-DD]symbolDays text` and run `howm: Open Todos Sidebar`.
 
-| 記号 | 意味                                       |
-| ---- | ------------------------------------------ |
-| `@`  | 予定。これからの予定に日付順で表示         |
-| `+`  | Todo。指定日から優先度が上昇               |
-| `!`  | 締切。猶予期間に入ると上昇し、期限後は上位 |
-| `-`  | 覚書。指定日に浮上し、その後下降           |
-| `~`  | 保留。指定日から周期的に浮き沈み           |
-| `.`  | 完了。一覧から除外                         |
+| Symbol | Meaning |
+| --- | --- |
+| `@` | Event. Appears among upcoming events in date order. |
+| `+` | Todo. Priority increases from the specified date. |
+| `!` | Deadline. Priority rises during its lead time and stays high after it is overdue. |
+| `-` | Note to revisit. Rises on the specified date, then gradually falls. |
+| `~` | Deferred item. Priority rises and falls periodically from the specified date. |
+| `.` | Completed item. Excluded from the list. |
 
-数値は猶予日数または周期です。省略時は覚書1日、保留30日、その他7日。優先度はhowmの考え方を参考にした独自計算で、Emacs版と厳密に同じ並び順ではありません。日付はローカルの暦日で計算します。
+The optional number sets the lead time or period in days. Defaults are one day for `-`, 30 days for `~`, and seven days for the other kinds. Priorities use an algorithm inspired by howm and do not exactly reproduce the Emacs version’s ordering. Dates are calculated as local calendar days.
 
-### サイドバーで確認・完了する
+### Viewing and completing reminders in the sidebar
 
-アクティビティバーのhowmアイコンをクリックするか、コマンドパレットで `howm: Todoサイドバーを開く` を実行します。専用サイドバーに「カレンダー」「Todoと予定」「メモ一覧」「過去の今日」「類似メモ」を表示します。`howm: ホーム` からも開けます。
+Click the howm icon in the activity bar or run `howm: Open Todos Sidebar`. The sidebar includes Calendar, Todos and Schedule, Notes, On This Day, Similar Notes, and Related Passages. You can also open it from `howm: Open Home`.
 
-「カレンダー」は月間表示です。タイトルバーの「新しいメモ」ボタンからメモを作成できます。設定の `howm.calendarWeekStart` で週の開始日を日曜（`sunday`、標準）または月曜（`monday`）から選べます。設定変更は即座に反映し、表示中の月と選択日は維持します。前月・翌月・今日ボタンで移動し、日付をクリックすると下部にその日のメモを表示します。各行には選択した日付と同じ行の日付・リマインダ記号の後ろのテキストを表示し、テキストがない場合はメモのタイトルを表示します。翌行以降の本文は使いません。同じメモに該当日のリマインダが複数あれば改行して並べます。表示されたテキストやタイトルをクリックするとメモを開きます。メモ自身の日付に加え、その日に未完了のリマインダがあるメモも表示します。同じメモは重複しません。同じファイル内の別メモは個別に表示します。
+Calendar shows a month at a time. Use the **Create Note** title-bar button to create a note. Set `howm.calendarWeekStart` to `sunday` (default) or `monday` to choose the first day of the week. Changes apply immediately while preserving the displayed month and selected date. Navigate with the previous month, next month, and Today buttons. Select a date to see its notes below the calendar. Each row shows the text after the date and reminder marker on a line matching the selected date, or the note title if that line has no text. Text on subsequent lines is not used. Multiple reminders in one note on the selected date appear on separate lines. Click the displayed text or title to open the note. The list includes notes dated that day and notes with unfinished reminders on that day. A note appears only once; separate notes in the same file remain separate.
 
-メモのある日には小さな印を付け、未完了のTodo・予定（`@ / + / ! / - / ~`）がある日は反転表示します。マウスを置くかTabキーで日付にフォーカスすると、その日のリマインダ本文・種別・メモタイトルをツールチップで確認できます。完了済み（`.`）は対象外です。開始前や過去の項目も記載された日付に表示し、期限超過のTodoを毎日に繰り返し表示しません。編集・完了・Undo・外部変更に追従します。カレンダー追加後はウィンドウを再読み込みしてください。
+Days with notes have a small marker. Days with unfinished reminders (`@ / + / ! / - / ~`) have a highlighted background. Hover over a day or focus it with Tab to see reminder text, kinds, and note titles in a tooltip. Completed reminders (`.`) are excluded. Future and past items appear on their written dates; overdue Todos are not repeated on every day. The calendar follows edits, completion, Undo, and external changes. Reload the window after updating from a version without Calendar.
 
-「メモ一覧」の上部には全文検索欄があります。入力後200msで、読み込んだ全メモから大文字・小文字を区別せず固定文字列検索します。検索アイコンまたは `howm: メモ一覧で検索` で検索欄へフォーカスできます。日本語入力の変換中は結果更新を待ちます。
+Notes has a full-text search field at the top. After 200 ms, it searches all loaded notes using a case-insensitive literal query. Use the search icon or `howm: Search Notes View` to focus the field. Results wait until IME composition is complete.
 
-結果はメモごとにまとめ、一致した行の本文とファイル内の行番号を表示します。一致部分を強調し、同じ行に複数の一致があっても1行として表示します。行をクリックすると元ファイルの最初の一致部分を選択します。長い行は一致箇所周辺を表示し、マウスを置くと全文と保存場所を確認できます。見出しやコード内も全文検索の対象です。最初の最上位見出しより前の本文は対象外です。
+Results are grouped by note and show each matching line with its file line number. Matches are highlighted; multiple matches on one line produce one result row. Clicking a row selects its first match in the original file. Long lines show an excerpt around the match; hover to see the full line and file location. Headings and code are included in full-text search, but text before the first top-level heading is excluded.
 
-検索結果は200行ずつ表示し、残りは「さらに表示」で追加できます。検索欄の×ボタンまたはEscapeで解除すると、通常のメモ一覧に戻ります。タイトルをクリックすると見出しへ移動します。検索欄は結果をスクロールしても上部に残り、サイドバーを隠して再表示しても検索語を維持します。未保存の編集・Undo・外部変更にも追従します。表示後に元ファイルが変わった場合は結果を更新し、再操作を案内します。検索や移動による自動保存は行いません。
+Results are displayed in batches of 200 lines; use **Show More** for the next batch. Clear the query with the × button or Escape to return to the regular note list. Clicking a title opens its heading. The search field remains at the top while results scroll, and the query is preserved when the sidebar is hidden and shown again. Results follow unsaved edits, Undo, and external changes. If the source file changes after results are displayed, the view refreshes and asks you to select again. Searching and navigation do not save automatically.
 
-**0.4.0へ更新後は `Developer: Reload Window`（ウィンドウの再読み込み）を実行してください。** メモ一覧の表示形式を変更したため、再読み込みで検索欄が反映されます。既存の `howm: 全文検索` と `howm: 正規表現検索` は引き続きパレットを開きます。
+**After updating from a version before 0.4.0, run `Developer: Reload Window`.** The Notes view changed format, and reloading enables its search field. `howm: Search All Text` and `howm: Search with Regular Expression` continue to open a picker.
 
-「メモ一覧」はタイトルの右側に `YYYY-MM-DD` 形式の日付を表示します。本文の単独行にある `[YYYY-MM-DD HH:mm]` または `[YYYY-MM-DD]` を優先し、記載がなければファイル名の先頭の日付、それもなければ更新日を使用します。リマインダの日付やコードブロック内の日付はメモの日付として使用しません。ツールチップで日付の出典を確認できます。
+Notes shows a date in `YYYY-MM-DD` format to the right of each title. A standalone `[YYYY-MM-DD HH:mm]` or `[YYYY-MM-DD]` line in the note takes precedence, followed by a date at the start of the filename and then the modification date. Reminder dates and dates in code blocks are not used as the note date. Hover to see the date’s source.
 
-Windowsで一覧・検索・カレンダー・Todoからクリックしてもメモが開かない場合は、0.4.1以降へ更新してください。旧版には保存先のドライブ文字（`C:`）と、メモURIのドライブ文字（`c:`）の違いを保存先外と判定し、開く処理を終了する不具合がありました。0.4.1では両方のURIを同じ形式にして比較します。更新後は `Developer: Reload Window` を実行してください。
+If clicking a note in a list, search, Calendar, or Todos does not open it on Windows, update to 0.4.1 or later. Earlier versions could treat the difference between a notes folder’s drive letter (`C:`) and a note URI’s drive letter (`c:`) as a location outside the notes folder and stop navigation. Version 0.4.1 compares both URIs in the same normalized form. Run `Developer: Reload Window` after updating.
 
-旧版から更新した直後に `No view is registered with id: howm.todos` が出る場合は、コマンドパレットから `Developer: Reload Window`（ウィンドウの再読み込み）を実行してください。新しいサイドバーの登録がウィンドウに反映されていない状態を解消できます。拡張機能の開発中に `package.json` のビュー定義を変更した場合も、ウィンドウを再読み込みしてください。
+If `No view is registered with id: howm.todos` appears just after an update, run `Developer: Reload Window` from the command palette. This reloads the sidebar registration in the workbench. Reload during development as well when changing view definitions in `package.json`.
 
-「Todoと予定」は次の分類で表示します。完了済みと空の分類は表示しません。
+Todos and Schedule uses the following groups. Completed reminders and empty groups are hidden.
 
-- **Todo（優先度順）**：開始日を迎えたTodo、締切、覚書、保留。最初から展開します。
-- **これからの予定・締切**：今日以降の予定と、まだTodoの表示対象になっていない締切を日付順で表示します。最初から展開します。締切が猶予期間に入ると「Todo（優先度順）」へ移り、両方には表示しません。
-- **開始前のTodo・過去の予定**：開始日前のTodoと過去の予定。最初は折りたたみます。
+- **Todos (by Priority)**: Todos whose start date has arrived, deadlines, notes to revisit, and deferred items. Expanded by default.
+- **Upcoming Events and Deadlines**: Events from today onward and deadlines that have not yet entered the Todo group, in date order. Expanded by default. When a deadline enters its lead time, it moves into Todos instead of appearing in both groups.
+- **Future Todos and Past Events**: Todos before their start date and past events. Collapsed by default.
 
-項目には本文・日付・種別を表示し、本文がなければ「本文なし」と表示します。マウスを置くとメモのタイトル・保存場所・行番号を確認できます。クリックすると元のメモの該当行へ移動します。
+Each item shows its text, date, and kind. Items without text display **No text**. Hover to see the note title, file location, and line number. Click to navigate to the original reminder line.
 
-締切（`!`）は期日の3日前から当日まで文字とアイコンをオレンジ、期日を過ぎた翌日から赤で表示します。当日の予定（`@`）は黄色で表示します。開始日を表すTodo（`+`）・覚書（`-`）・保留（`~`）は、この期日の色分けの対象外です。日数は `howm.todos.dueSoonDays` で変更でき、`0` にすると締切当日だけオレンジになります。各リマインダの猶予日数（`!7` の `7` など）とは独立した設定で、並び順や分類には影響しません。日数の変更と日付の切り替わりは表示へ自動反映します。
+Deadlines (`!`) use orange text and icons from three days before the due date through the due date, and red starting the following day. Today’s events (`@`) are yellow. Todos (`+`), notes to revisit (`-`), and deferred items (`~`) use start dates and are not included in deadline coloring. Change the threshold with `howm.todos.dueSoonDays`; `0` means only the due date is orange. This setting is independent of each reminder’s lead time, such as `7` in `!7`, and does not affect ordering or grouping. Setting changes and date changes update the display automatically.
 
-色はVS Code標準の [`workbench.colorCustomizations`](https://code.visualstudio.com/api/references/theme-color) で個別にカスタマイズできます。ライトテーマでは読みやすい濃い色を使います。文字の色分けには `explorer.decorations.colors`（標準 `true`）を有効にしてください。無効の場合もアイコンには色が付きます。たとえば `settings.json` に次を設定します。
+Customize each color through VS Code’s [`workbench.colorCustomizations`](https://code.visualstudio.com/api/references/theme-color). Light themes use darker shades for readability. Enable `explorer.decorations.colors` (default `true`) to color item text; icons remain colored when it is disabled. For example, add this to `settings.json`:
 
 ```json
 {
@@ -170,196 +172,196 @@ Windowsで一覧・検索・カレンダー・Todoからクリックしてもメ
 }
 ```
 
-項目にマウスを置いてチェックの完了ボタンを押すと、そのリマインダを完了にします。別のメモを編集中でも対象のリマインダだけを編集します。**自動保存はしません**。元のメモを開いて通常どおり保存してください。元のメモでUndoすれば完了を取り消せます。表示後にメモの内容が変わった場合は、一覧を更新して再操作を案内します。
+Hover over an item and click its checkmark button to complete the reminder. Only that reminder is edited, even when you are working in another note. **Changes are not saved automatically.** Open the source note and save it normally. Undo in that note reverses completion. If the note has changed since the row was displayed, the list refreshes and asks you to try again.
 
-メモの編集・外部変更は自動で反映します。サイドバーの再表示時とVS Codeへ戻ったときにも保存先を読み込み直します。表示中は1分ごとに日付を確認し、日付が変わると優先度と分類を更新します。メモが多い場合は読み込みに時間がかかることがあります。
+Edits and external changes are reflected automatically. The notes folder is also rescanned when the sidebar is shown again or VS Code regains focus. While visible, the sidebar checks the date every minute and updates priorities and groups after a date change. Loading can take time with many notes.
 
-項目が出ない場合はビューのメッセージと保存先を確認してください。標準の対象はワークスペースの `howm/` 配下の `.md` ファイルです。タイトル部分の更新ボタンで再試行し、フォルダボタンで保存先を変更できます。読み込みに失敗した場合もビューに理由を表示します。
+If items are missing, check the view’s message and the notes folder. By default, `.md` files under the workspace’s `howm/` folder are included. Use the title-bar refresh button to retry or the folder button to select another location. Loading failures are shown in the view.
 
-### パレットで確認する
+### Viewing reminders in a picker
 
-既存の `howm: Todoと予定` は入力欄付きのパレットを開きます。入力欄の下に項目を表示し、入力すると絞り込めます。分類はサイドバーと共通で、同じリマインダを重複表示しません。タイトルにメモとリマインダの件数を表示します。「開始前のTodo・過去の予定を確認」から開始前や過去の項目も開けます。開くたびに保存先を読み込み直し、「索引を再構築して再表示」からも更新できます。
+`howm: Show Todos and Schedule` opens a picker with a filter field and items below it. It uses the same groups as the sidebar without duplicating reminders. The title shows note and reminder counts. **Review Future Todos and Past Events** lets you access inactive and past items. The notes folder is rescanned whenever the picker opens, and **Rebuild Index and Refresh** lets you refresh it again.
 
-### 記載例
+### Examples
 
-メモの本文に、次のように1行ずつ記述します。日付の閉じ括弧と記号、記号と日数の間には空白を入れません。
-
-```text
-[2026-10-12]@ チームの定例ミーティング
-[2026-10-08]+ 部屋を片づける
-[2026-10-08]+14 読みかけの本を読む
-[2026-10-15]!7 試作品を提出する
-[2026-10-08]-3 気になった記事を読み返す
-[2026-10-08]~30 新しいキーボードの購入を検討する
-[2026-10-08]. READMEを更新した
-```
-
-- `@`：10月12日の予定として「これからの予定・締切」に表示します。
-- `+`：10月8日からTodoに表示し、日が経つにつれて優先度が上がります。`+14` は日数省略時の `+`（7日）より緩やかに上がります。
-- `!7`：10月15日の締切に向けて、7日前の10月8日からTodoの優先度が上がります。期限後も完了するまで上位に残ります。
-- `-3`：10月8日に浮上し、3日を目安に優先度が下がります。一覧から自動削除されるわけではありません。
-- `~30`：10月8日から30日周期で優先度が上下します。新しい予定を自動作成する機能ではありません。
-- `.`：完了済みなので、Todo・予定一覧には表示しません。
-
-これらはメモの本文に書いてください。コードブロック内に書いたリマインダは認識されません。
-
-元の行で `howm: この行のリマインダを完了` を実行すると元の日付・種別を履歴として残します。`howm: この行の日付を変更` と `howm: 今日の日付を挿入` も使えます。変更は通常のエディタ編集なのでUndoでき、通常の保存操作が必要です。OS通知やバックグラウンド通知はありません。
-
-たとえば、次の締切を10月14日に完了操作すると、完了日と元の締切が残ります。
-
-変更前：
+Write each reminder on its own line in the note body. Do not put spaces between the closing date bracket and the symbol, or between the symbol and its number.
 
 ```text
-[2026-10-15]!7 試作品を提出する
+[2026-10-12]@ Weekly team meeting
+[2026-10-08]+ Tidy the room
+[2026-10-08]+14 Read the book I started
+[2026-10-15]!7 Submit the prototype
+[2026-10-08]-3 Revisit an interesting article
+[2026-10-08]~30 Consider buying a new keyboard
+[2026-10-08]. Updated the README
 ```
 
-変更後：
+- `@`: Appears as an October 12 event in Upcoming Events and Deadlines.
+- `+`: Appears in Todos starting October 8 and gains priority over time. `+14` rises more slowly than the default seven-day `+`.
+- `!7`: Gains Todo priority from October 8, seven days before the October 15 deadline. Remains near the top after the deadline until completed.
+- `-3`: Rises on October 8 and loses priority over roughly three days. It is not automatically removed from the list.
+- `~30`: Priority oscillates with a 30-day period starting October 8. It does not automatically create new events.
+- `.`: Already complete, so it is excluded from Todos and Schedule.
+
+Put reminders in the note body. Reminders inside code blocks are not recognized.
+
+Run `howm: Complete Reminder on This Line` on the source line to mark it complete while retaining its original date and kind as history. `howm: Change Date on This Line` and `howm: Insert Today’s Date` are also available. These are ordinary editor changes: they support Undo and require normal saving. There are no OS or background notifications.
+
+For example, completing this deadline on October 14 preserves both the completion date and the original deadline.
+
+Before:
 
 ```text
-[2026-10-14]. [2026-10-15]:!7 試作品を提出する
+[2026-10-15]!7 Submit the prototype
 ```
 
-### 日付の入力
+After:
 
-コマンドパレットから `howm: 日付を入力` を実行すると、入力を解釈してカーソル位置に `[YYYY-MM-DD]` を挿入します。選択範囲があれば置換し、複数カーソル・複数選択にも同じ日付を入力します。空欄でEnterを押すと今日、Escapeでキャンセルすると変更しません。
+```text
+[2026-10-14]. [2026-10-15]:!7 Submit the prototype
+```
 
-今日が2026年11月5日の場合の入力例です。
+### Entering dates
 
-| 入力 | 挿入される日付 |
+Run `howm: Enter Date` from the command palette to interpret an input and insert `[YYYY-MM-DD]` at the cursor. It replaces a selection and applies the same date to all cursors or selections. Press Enter on an empty field to use today, or Escape to cancel without changes.
+
+Examples when today is November 5, 2026:
+
+| Input | Inserted date |
 | --- | --- |
-| 空欄、`0`、`today` | `[2026-11-05]` |
-| `tomorrow`、`+1` | `[2026-11-06]` |
+| Empty, `0`, `today` | `[2026-11-05]` |
+| `tomorrow`, `+1` | `[2026-11-06]` |
 | `+7` | `[2026-11-12]` |
 | `15` | `[2026-11-15]` |
 | `3` | `[2026-12-03]` |
 | `31` | `[2026-12-31]` |
-| `12/5`、`12-5` | `[2026-12-05]` |
+| `12/5`, `12-5` | `[2026-12-05]` |
 | `1/10` | `[2027-01-10]` |
 | `2/29` | `[2028-02-29]` |
-| `2027/2/20`、`2027-2-20` | `[2027-02-20]` |
+| `2027/2/20`, `2027-2-20` | `[2027-02-20]` |
 | `2025/1/1` | `[2025-01-01]` |
-| `thu`、`fri`、`mon` | `[2026-11-05]`、`[2026-11-06]`、`[2026-11-09]` |
+| `thu`, `fri`, `mon` | `[2026-11-05]`, `[2026-11-06]`, `[2026-11-09]` |
 
-年や月を省略すると、今日以降で最も近い該当日を選びます（今日と一致すれば今日）。今月にない日は翌月以降、`2/29` は次に存在する閏日を選びます。`+N` は今日からN日後を意味し、単独の数字は日を指定します。過去の日付には年月日を指定してください。曜日は `mon`〜`sun` に対応し、英字の大文字・小文字と前後の空白は無視します。存在しない日付や解釈できない入力は入力欄にエラーを表示します。
+When the year or month is omitted, the nearest matching date on or after today is used, including today if it matches. A day missing from the current month is found in a later month; `2/29` selects the next valid leap day. `+N` means N days from today, while a number on its own specifies a day of the month. Use a full year/month/day for past dates. Weekdays `mon` through `sun` are supported. Inputs ignore letter case and surrounding whitespace. Invalid dates and unrecognized inputs show an error in the input field.
 
-`howm: この行の日付を変更` でも同じ簡易日付指定を使えます。リマインダの種別・猶予日数・本文・履歴は維持します。どちらもローカルの暦日を使用し、Undo可能で、自動保存しません。`howm: 今日の日付を挿入` は入力欄を表示せず、従来どおり今日の日付を直接挿入します。
+`howm: Change Date on This Line` accepts the same date inputs while preserving the reminder kind, lead time, text, and history. Both commands use local calendar days, support Undo, and do not save automatically. `howm: Insert Today’s Date` inserts today’s date directly without an input field.
 
-## 類似メモ・過去の今日
+## Similar Notes and On This Day
 
-専用サイドバーの「類似メモ」「過去の今日」は、初期状態では折りたたまれています。展開して利用してください。どちらもタイトルをクリックすると元のメモの見出しへ移動し、右上の更新ボタンで手動更新できます。追加後にビューが表示されない場合は `Developer: Reload Window` を実行してください。
+Similar Notes and On This Day are initially collapsed in the sidebar. Expand them to use them. Click a title to navigate to the source heading, or use the title-bar refresh button to update manually. If the views do not appear after an update, run `Developer: Reload Window`.
 
-### 類似メモ
+### Similar Notes
 
-現在のカーソルがあるメモのタイトル・本文から、内容の近いメモを関連度順に最大10件表示します。日付も表示します。`<<<` 宣言・`>>>` リンクは不要で、既存の `howm: 関連メモ` と併用できます。同じファイルの別メモや同名タイトルも個別に扱い、現在のメモ自身は除外します。howm保存先以外のファイルや最初の見出しより前にカーソルがある場合は、対象メモを選ぶよう案内します。
+Shows up to ten notes similar to the title and body of the note at the current cursor, ranked by similarity and displayed with their dates. No `<<<` declarations or `>>>` links are required; it works alongside `howm: Show Related Notes`. Other notes in the same file and notes with identical titles remain separate, while the current note itself is excluded. If the cursor is outside the howm notes folder or before the first heading, the view asks you to select a note.
 
-日本語の単語分割を使わず、Unicode NFKC正規化・英字の小文字化後の文字2-gram・3-gramと英数字の語を使ったTF-IDF／コサイン類似度で計算します。タイトルは本文の3倍に重み付けします。日時やMarkdown装飾、一部の一般的な語を除き、短い一致や全体に頻出する断片を補正して過大評価を抑えます。類似度は0〜1です。外部AI・API・ネットワーク通信は使用しません。
+Similarity uses TF-IDF and cosine similarity over character 2-grams and 3-grams and alphanumeric words after Unicode NFKC normalization and lowercasing, without Japanese word segmentation. Titles receive three times the body weight. Dates, Markdown formatting, and some common words are excluded. Short matches and fragments common throughout the corpus are adjusted to reduce excessive scores. Scores range from 0 to 1. No external AI, API, or network requests are used.
 
-カーソルが別メモへ移動すると対象を切り替えます。本文変更は500ms待って反映し、未保存編集・Undo・別メモの編集・外部変更・追加・削除にも追従します。`howm.similarNotes.autoRefresh` を無効にした場合は更新ボタンを使ってください。設定変更とビューの再表示時にも更新します。候補がない場合はメッセージを表示します。
+The target changes when the cursor moves to another note. Edits are reflected after 500 ms, including unsaved changes, Undo, edits to other notes, and external modifications, additions, or deletions. If `howm.similarNotes.autoRefresh` is disabled, use the refresh button. Setting changes and showing the view again also refresh the results. An empty state is shown when no candidates match.
 
-### 過去の今日
+### On This Day
 
-ローカルの日付と同じ月日に書かれた過去年のメモを、年の新しい順にまとめて表示します。今年と未来の年は除外します。各年は折りたたみ可能で、件数に上限はありません。同一年内の順序はメモ一覧と同じです。
+Shows notes written on the same local month and day in previous years, grouped by year from newest to oldest. The current year and future years are excluded. Year groups can be collapsed, and there is no result limit. Within a year, notes keep their regular note-list order.
 
-日付はメモ一覧・カレンダーと共通で、各メモ本文の単独の日時行、ファイル名の先頭の日付、更新日の順に判定します。リマインダやコード内の日付は使いません。2月29日のメモは2月29日だけに表示します。表示中はTodoと共有する1分ごとの確認で日付変更を反映し、索引更新・再表示・手動更新でも表示を更新します。
+Dates follow the same rules as Notes and Calendar: a standalone timestamp line in the note, a date at the start of the filename, then the modification date. Reminder dates and dates in code are excluded. February 29 notes appear only on February 29. While visible, the view shares the Todo sidebar’s one-minute date check. Index updates, showing the view again, and manual refresh also update it.
 
-両機能は既存のメモ索引を共有し、独立したファイル走査や永続キャッシュは追加しません。類似メモの特徴量はメモリに保持し、内容が変わったメモだけ再計算します。文書頻度はタイトル・本文を合わせたメモ単位で管理し、全体の変更時にIDFとベクトル長を更新します。非表示中は表示・類似度計算を止め、再表示時に索引とキャッシュを同期します。削除・置換された特徴量は同期時に破棄し、無効化・拡張終了時にも検索キャッシュを破棄します。大きな計算は途中でイベント処理に制御を返し、古い計算結果は採用しません。初回計算時間とメモリ量はメモ数・本文量に依存します。
+Both features share the existing note index without adding separate file scans or a persistent cache. Similarity features are held in memory and recalculated only for changed notes. Document frequency is tracked per note across its title and body; corpus changes update IDF and vector lengths. Rendering and similarity computation stop while hidden, and the index and cache are synchronized when shown again. Features for deleted or replaced notes are discarded during synchronization; disabling the feature or deactivating the extension also clears the search cache. Large computations periodically yield to event handling, and obsolete results are ignored. Initial computation time and memory use depend on note count and text volume.
 
-表示後に編集されて古くなった項目をクリックした場合は、既存の一覧と同様に再選択を案内します。現在の索引と本文を確認してから開くため、移動した見出しの古い位置へ誤って移動しません。メモの書き換えや自動保存は行いません。
+Clicking a stale item after an edit asks you to select again, as with the regular note list. The current index and source text are checked before opening, so moved headings are not opened at obsolete positions. Notes are not rewritten or saved automatically.
 
-## 関連箇所
+## Related Passages
 
-専用サイドバーの「関連箇所」は、カーソル付近の文章を手掛かりに、過去のメモ内の関連する記述を探します。初期状態では折りたたまれています。メモ全体のタイトル・本文を比較する「類似メモ」と異なり、長いメモに埋もれた一部分も見つけられます。編集していない閲覧中のメモや、新規メモの未保存本文でも利用できます。howm保存先内のMarkdownエディタが対象です。
+Related Passages uses text near the cursor to find related writing in past notes. The view starts collapsed in the sidebar. Whereas Similar Notes compares whole titles and bodies, Related Passages can find relevant sections buried in long notes. It works while reading an unmodified note or editing unsaved text in a new note. The active editor must be a Markdown file inside the howm notes folder.
 
-カーソル前後5行（最大11行）を検索キーにします。同じメモ・同じ見出しセクション内に限定し、短い場合は説明文を得られる範囲へ広げます。箇条書きの途中の空行では文脈を分断しません。コードブロックは除外し、コード内のカーソルからは同じセクションの前後の説明文を使います。Markdown装飾・リンク先URL・日時・リマインダ記号を除き、装飾だけの行やURLだけの行は検索に使いません。最低30文字の有効な文章がない場合は検索しません。検索キーは最大4,000文字に制限します。
+The query uses five lines before and after the cursor, up to eleven lines in total. Context stays within the same note and heading section, expanding when needed to collect enough prose. Blank lines inside lists do not break the context. Code blocks are excluded; when the cursor is in code, surrounding prose from the same section is used. Markdown formatting, link destination URLs, timestamps, and reminder markers are removed. Formatting-only and URL-only lines are not used. Searches require at least 30 effective characters of prose, and queries are limited to 4,000 characters.
 
-保存先のメモを、有効な本文5行ずつ・開始位置を2行ずつずらすスライディングウィンドウ方式で索引化します。末尾の短い区間も対象とし、メモ・見出し境界を越えず、空行やコードは数えません。正規化・特徴量抽出と短い一致への補正は類似メモと共通ですが、TF-IDFの文書頻度は検索区間単位で独立して管理します。外部AI・API・ネットワーク通信や追加のAIモデルは使用しません。既存の類似メモの検索順位・設定には影響しません。
+Notes are indexed with sliding windows of five effective body lines, advancing two lines at a time. Short trailing windows are included. Windows do not cross note or heading boundaries, and blank lines and code are not counted. Normalization, feature extraction, and short-match adjustments are shared with Similar Notes, but TF-IDF document frequency is tracked separately per passage. No external AI, API, network requests, or additional AI models are used. Similar Notes rankings and settings are unaffected.
 
-関連度順に最大10件、タイトル・日付・行番号・本文の抜粋（最大3行程度）を表示します。抜粋は区間内の関連性の高い行を優先し、長い文章は省略します。同じメモの重なる区間は最も関連度の高いものにまとめ、離れた関連箇所は個別に表示します。現在のメモ自身は除外しますが、同じファイルの別メモは検索対象です。項目にマウスを置くと保存場所と類似度を確認できます。
+Up to ten results appear in relevance order, showing the title, date, line number, and an excerpt of about three lines. Excerpts prioritize relevant lines within the passage and truncate long text. Overlapping passages in the same note are merged into the strongest result; distant related passages remain separate. The current note is excluded, but other notes in the same file are searched. Hover to see the file location and similarity score.
 
-クリックすると元のファイルを開き、該当範囲を選択して開始行へカーソルを移動します。表示後に本文が変わっている場合は最新の索引・本文と照合し、再選択を案内します。古い行番号には移動しません。検索や移動による自動保存は行いません。
+Click a result to open the original file, select the passage, and move the cursor to its starting line. If the source has changed, the current index and text are checked and you are asked to select again. Navigation does not use stale line numbers or save automatically.
 
-カーソル移動・入力の後、500ms待って自動更新します。同じ検索キー内の移動では再計算を省略します。未保存編集・Undo/Redo・対象メモの追加や削除・外部変更も反映します。再表示時、設定変更時、タイトルバーの更新ボタンでも更新できます。`howm.relatedPassages.autoRefresh` が無効な場合は更新ボタンを使ってください。
+Results refresh 500 ms after cursor movement or typing. Movement that produces the same query skips recalculation. Unsaved edits, Undo/Redo, added or deleted notes, and external changes are reflected. Showing the view again, changing settings, or clicking the title-bar refresh button also updates it. When `howm.relatedPassages.autoRefresh` is disabled, use the refresh button.
 
-既存のメモ索引と変更監視を利用し、メモを開くたびの全ファイル走査は行いません。特徴量はメモリ上に保持し、変更されたメモだけ区間を作り直します。ウィンドウの行数や移動幅を変更した場合は区間索引を再構築します。非表示中は検索を止め、再表示時に最新の索引へ同期します。大きな計算は途中でイベント処理へ制御を返し、古い結果は破棄します。区間数はメモ数より多いため、初回の計算時間とメモリ使用量は本文量や設定に依存します。索引のディスク永続化は行いません。
+The feature uses the existing note index and change monitoring instead of scanning all files whenever a note opens. Features are held in memory, and passages are rebuilt only for changed notes. Changing the window length or step rebuilds the passage index. Searching stops while hidden, then synchronizes with the latest index when shown again. Large computations yield to event handling and discard obsolete results. There can be more passages than notes, so initial computation time and memory use depend on text volume and settings. The index is not persisted to disk.
 
-## 設定
+## Settings
 
-| 設定                   | 標準値・意味                                                    |
-| ---------------------- | --------------------------------------------------------------- |
-| `howm.notesDirectory`  | ワークスペース内 `howm`。絶対パス・`~/`・相対パス対応           |
-| `howm.filenamePattern` | `{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md`                  |
-| `howm.defaultTitle`    | `メモ`。新規メモのタイトルの初期値。空文字列なら空欄。選択中のテキストを優先 |
-| `howm.template`        | タイトル・日時・本文。`{title}` `{date}` `{time}` `{body}` 対応 |
-| `howm.maxFileSizeKB`   | 1024（最小1）。ディスクから読み込む際、超えるファイルは索引から除外 |
-| `howm.calendarWeekStart` | `sunday`（日曜始まり）。`monday`で月曜始まりに変更 |
-| `howm.todos.dueSoonDays` | `3`（最小0）。締切をオレンジで表示し始める期日の何日前か。0は当日のみ |
-| `workbench.colorCustomizations` | `howm.todoDueSoonForeground`（期日が近い締切）、`howm.todoOverdueForeground`（期限超過）、`howm.scheduleTodayForeground`（当日の予定）の色を指定 |
-| `howm.similarNotes.enabled` | `true`。類似メモの有効・無効 |
-| `howm.similarNotes.maxResults` | `10`（最小1）。類似メモの最大表示件数 |
-| `howm.similarNotes.minSimilarity` | `0.1`（0〜1）。表示する最低類似度 |
-| `howm.similarNotes.autoRefresh` | `true`。編集・メモ切り替え時の自動更新 |
-| `howm.onThisDay.enabled` | `true`。過去の今日の有効・無効 |
-| `howm.relatedPassages.enabled` | `true`。関連箇所の有効・無効 |
-| `howm.relatedPassages.maxResults` | `10`（最小1）。最大表示件数 |
-| `howm.relatedPassages.minSimilarity` | `0.15`（0〜1）。表示する最低類似度 |
-| `howm.relatedPassages.contextLines` | `5`（最小0）。カーソル前後の取得行数 |
-| `howm.relatedPassages.windowLines` | `5`（最小1）。1検索区間の有効な本文の行数 |
-| `howm.relatedPassages.windowStep` | `2`（最小1）。区間の移動幅。`windowLines` 以下に制限 |
-| `howm.relatedPassages.minQueryLength` | `30`（最小1）。装飾・空白を除いた検索キーの最低文字数 |
-| `howm.relatedPassages.autoRefresh` | `true`。カーソル移動・編集・索引更新時の自動検索 |
+| Setting | Default and meaning |
+| --- | --- |
+| `howm.notesDirectory` | `howm` inside the workspace. Supports absolute paths, `~/`, and relative paths. |
+| `howm.filenamePattern` | `{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md` |
+| `howm.defaultTitle` | `メモ`. Default title for new notes; an empty string leaves it blank. Selected text takes precedence. |
+| `howm.template` | Title, timestamp, and body. Supports `{title}`, `{date}`, `{time}`, and `{body}`. |
+| `howm.maxFileSizeKB` | `1024` (minimum `1`). Files exceeding this limit are excluded when read from disk. |
+| `howm.calendarWeekStart` | `sunday`. Use `monday` to start the week on Monday. |
+| `howm.todos.dueSoonDays` | `3` (minimum `0`). Days before a deadline to start displaying it in orange. `0` means the due date only. |
+| `workbench.colorCustomizations` | Customize `howm.todoDueSoonForeground` (due soon), `howm.todoOverdueForeground` (overdue), and `howm.scheduleTodayForeground` (today’s events). |
+| `howm.similarNotes.enabled` | `true`. Enable or disable Similar Notes. |
+| `howm.similarNotes.maxResults` | `10` (minimum `1`). Maximum similar notes to display. |
+| `howm.similarNotes.minSimilarity` | `0.1` (range `0`–`1`). Minimum similarity to display. |
+| `howm.similarNotes.autoRefresh` | `true`. Automatically refresh after edits or switching notes. |
+| `howm.onThisDay.enabled` | `true`. Enable or disable On This Day. |
+| `howm.relatedPassages.enabled` | `true`. Enable or disable Related Passages. |
+| `howm.relatedPassages.maxResults` | `10` (minimum `1`). Maximum passages to display. |
+| `howm.relatedPassages.minSimilarity` | `0.15` (range `0`–`1`). Minimum similarity to display. |
+| `howm.relatedPassages.contextLines` | `5` (minimum `0`). Lines to collect before and after the cursor. |
+| `howm.relatedPassages.windowLines` | `5` (minimum `1`). Effective body lines per passage. |
+| `howm.relatedPassages.windowStep` | `2` (minimum `1`). Lines to advance between windows, limited to `windowLines`. |
+| `howm.relatedPassages.minQueryLength` | `30` (minimum `1`). Minimum query length after removing formatting and whitespace. |
+| `howm.relatedPassages.autoRefresh` | `true`. Automatically search after cursor movement, edits, or index updates. |
 
-`howm.filenamePattern` では `{YYYY}`（年）、`{MM}`（月）、`{DD}`（日）、`{HH}`（時）、`{mm}`（分）、`{ss}`（秒）を使用できます。年以外は2桁です。保存先内の相対パスで、拡張子は `.md` にしてください。絶対パス、`.`・`..`・空のパス要素、バックスラッシュ、コロン、制御文字は使用できません。同名ファイルが存在すると連番を付けます。
+`howm.filenamePattern` supports `{YYYY}` (year), `{MM}` (month), `{DD}` (day), `{HH}` (hour), `{mm}` (minute), and `{ss}` (second). All fields except the year use two digits. Use a relative path inside the notes folder with a `.md` extension. Absolute paths, `.` or `..` segments, empty path segments, backslashes, colons, and control characters are not allowed. Existing filenames receive a sequence suffix.
 
-サイズ上限はメモの分割数にかかわらずファイル単位です。未保存の編集内容はサイズ上限の判定を経ずに索引へ反映し、保存後の再読み込みでは上限を適用します。本文は通常のMarkdownファイルが正本で、索引はメモリ上に再生成します。外部編集と未保存の編集を反映します。隠しディレクトリ・node_modules・シンボリックリンクは初回走査の対象外です。サイドバーのメモ一覧は最近200メモ、最近のメモは50メモで、全件は一覧コマンドで表示します。複数ワークスペースの場合、標準保存先は最初のフォルダです。
+The size limit applies per file regardless of how many notes it contains. Unsaved edits enter the index without the size check; reloading after a save applies the limit. Ordinary Markdown files remain the source of truth, and the index is regenerated in memory. External edits and unsaved editor changes are reflected. Hidden directories, `node_modules`, and symbolic links are excluded from the initial scan. The sidebar’s regular Notes list shows the most recent 200 notes, Show Recent Notes shows 50, and List Notes gives access to all notes. In a multi-root workspace, the first folder supplies the default notes location.
 
-## 既存Markdownファイルの取り込み
+## Importing existing Markdown files
 
-リポジトリの `scripts/import-markdown.pl` は、第1引数を保存先、第2引数以降を入力ファイルとして受け取り、ファイル名冒頭の `YYYYMMDD` からフォルダとファイル名を決めます。Perl標準モジュールだけで実行できます。
+The repository’s `scripts/import-markdown.pl` takes a destination folder as its first argument and input files as subsequent arguments. It derives folders and filenames from the leading `YYYYMMDD` in each input filename. Only standard Perl modules are required.
 
 ```sh
 perl scripts/import-markdown.pl ./howm ./old-notes/20261012-note.md ./old-notes/20261013-note.md
 ```
 
-保存先は `保存先/YYYY/MM/YYYY-MM-DD-HHMMSS.md` です。入力ファイルのctimeを**JST（UTC+09:00）**に変換し、その日付がファイル名の日付と一致する場合はctimeの時分秒を使います。一致しなければ時刻を `000000` にします。実行環境のタイムゾーンによる差はなく、`TZ`指定も不要です。ctimeはPerlの`stat`が返すファイル属性の変更時刻です。
+Files are saved under `destination/YYYY/MM/YYYY-MM-DD-HHMMSS.md`. The input file’s ctime is converted to **JST (UTC+09:00)**. If that date matches the filename date, its hours, minutes, and seconds are used; otherwise the time is `000000`. Results do not depend on the system timezone, and no `TZ` setting is needed. ctime is the file metadata change time returned by Perl’s `stat`.
 
-例えば、`20261012-note.md` のctimeがJSTで2026-10-12 09:30:45なら `2026/10/2026-10-12-093045.md` に、別の日付なら `2026/10/2026-10-12-000000.md` に保存します。
+For example, `20261012-note.md` with a ctime of October 12, 2026 at 09:30:45 JST is copied to `2026/10/2026-10-12-093045.md`. If its ctime falls on a different date, it is copied to `2026/10/2026-10-12-000000.md`.
 
-元ファイルを残してコピーし、UTF-8のMarkdown本文・見出し・BOM・改行は変更しません。保存先の年・月フォルダは自動作成します。同名が存在すると `-1.md`、`-2.md` と連番を付け、上書きしません。再実行した場合も同名のファイルには連番を付けます。
+Source files are retained. UTF-8 Markdown text, headings, BOMs, and line endings are copied unchanged. Year and month folders are created automatically. If a destination already exists, suffixes such as `-1.md` and `-2.md` are added without overwriting. Running the import again also creates numbered copies.
 
-日付が不正なファイル、存在しないファイル、ディレクトリ、UTF-8として読み込めないファイルは理由を表示して処理を続けます。入力と保存先の対応、および成功・失敗件数を表示します。終了コードは全件成功が`0`、1件以上の失敗が`1`、引数不足などの使用方法の誤りが`2`です。`--help`で使用方法を確認できます。
+Invalid dates, missing files, directories, and inputs that cannot be read as UTF-8 are reported while processing continues. The tool prints input-to-output mappings and success/failure counts. Exit codes are `0` when all files succeed, `1` when at least one fails, and `2` for usage errors such as missing arguments. Use `--help` for usage information.
 
-コピー後、拡張の `howm: メモの保存先を選択` で第1引数のフォルダを指定してください。既にそのフォルダを使用している場合は自動で反映し、必要に応じて `howm: 索引を再構築` を実行できます。各メモの日時行があればその日付を優先し、記載がなければ出力ファイル名の日付を使います。サイズ上限は拡張の `howm.maxFileSizeKB` の設定に従います。
+After copying, run `howm: Select Notes Folder` and select the destination folder. If it is already the active notes folder, changes appear automatically; use `howm: Rebuild Index` if needed. A timestamp line in a note takes precedence over the output filename’s date. `howm.maxFileSizeKB` still applies.
 
-このスクリプトはリポジトリから実行する独立したツールです。VSIXには含まれません。`npm run test:import` でPerlテストと、生成したファイルを拡張のメモ解析処理で読み込むテストを実行できます。
+This is a standalone repository tool and is not included in the VSIX. Run `npm run test:import` for the Perl tests and tests that parse imported files with the extension’s note parser.
 
-## 開発・制約
+## Development and limitations
 
-`npm test` で型チェックとコアテストを実行します。`npm run test:integration` は独立したVS Codeプロファイルで実機テストを実行します（macOS以外は `VSCODE_EXECUTABLE` に実行ファイルを指定）。Desktop版VS Codeを対象とし、Web版には対応しません。Emacs Lisp、旧howm形式、Wikiリンク、Migemo、Markdownプレビュー拡張は含みません。
+Run `npm test` for type checking and core tests. `npm run test:integration` runs tests in a separate VS Code profile; on platforms other than macOS, set `VSCODE_EXECUTABLE` to the executable path. The extension targets desktop VS Code and does not support VS Code for the Web. It does not include Emacs Lisp, the legacy howm file format, Wiki links, Migemo, or Markdown preview integration.
 
 howm: https://kaorahi.github.io/howm/
 
-## 表示言語と翻訳の更新
+## Display language and translation maintenance
 
-VS Codeの表示言語に自動追従し、日本語では従来の日本語UI、英語と未対応の言語では英語UIを表示します。拡張専用の言語設定はありません。VS Codeの `Configure Display Language` で言語を変更し、ウィンドウを再起動してください。
+The UI follows VS Code’s display language automatically: Japanese for Japanese, and English for English and unsupported languages. There is no extension-specific language setting. To switch languages, run VS Code’s `Configure Display Language` command and restart the window.
 
-コマンド・ビュー・設定の表示文言は `package.nls.json`（英語）と `package.nls.ja.json`（日本語）で管理します。`package.json` では `%howm.create.title%` などの安定したキーを参照します。キーは表示文言の変更時も維持してください。
+Command, view, and setting text lives in `package.nls.json` (English) and `package.nls.ja.json` (Japanese). `package.json` references stable keys such as `%howm.create.title%`. Keep these keys when changing the displayed wording.
 
-実行時の文言はVS Code標準の `vscode.l10n.t("English message")` を使います。変数は `vscode.l10n.t("Notes for {0} ({1})", date, count)` のように文全体に含め、静的な英語リテラルから抽出できるようにしてください。Webviewでは拡張側で翻訳し、HTMLへ入れる前にエスケープします。スクリプトへ渡す文言には `scriptString()` を使います。CSPと既存のメッセージ形式を維持してください。
+Use VS Code’s `vscode.l10n.t("English message")` for runtime text. Include variables in complete messages, such as `vscode.l10n.t("Notes for {0} ({1})", date, count)`, and use static English string literals so messages can be extracted. Translate webview text in the extension host and escape it before inserting it into HTML. Use `scriptString()` for text embedded in scripts. Preserve the CSP and existing message formats.
 
 ```sh
 npm run l10n:extract
-# l10n/bundle.l10n.ja.json の追加・変更分を手動翻訳
+# Manually translate additions and changes in l10n/bundle.l10n.ja.json
 npm run l10n:check
 npm test
 ```
 
-`l10n:extract` は `@vscode/l10n-dev` で `l10n/bundle.l10n.json` の英語原文だけを再生成し、日本語の手動翻訳は上書きしません。`l10n:check` はソースとのずれ、翻訳の不足・未使用、プレースホルダーの不一致を検出します。`npm test` と `npm run package` でも検査します。両方の `package.nls*.json` と `l10n/*.json` はVSIXに含まれます。
+`l10n:extract` uses `@vscode/l10n-dev` to regenerate only the English source bundle, `l10n/bundle.l10n.json`, without overwriting manual Japanese translations. `l10n:check` detects source/bundle differences, missing or unused translations, and placeholder mismatches. It also runs during `npm test` and `npm run package`. Both `package.nls*.json` files and `l10n/*.json` files are included in the VSIX.
 
-メモ本文・タイトル・ユーザー入力・コマンドID・設定キーと設定値・保存形式・日付入力の解析・検索用語は翻訳しません。例えば `howm.defaultTitle` の既定値 `メモ` は作成するデータに関わるため維持しています。`core.ts`・`todo-model.ts`・検索ワーカーの固定文字列はモデルの互換性とVS Codeからの独立性を保ち、`src/localization.ts` の表示境界で翻訳します。通信エラーなど外部由来の詳細は元の表現を表示します。独立したPerl取り込みツールのCLI文言はVS Code UIの対象外です。
+Do not translate note text, titles, user input, command IDs, setting keys or values, storage formats, date parsing, or search terms. For example, `howm.defaultTitle` retains its `メモ` default because it affects created data. Fixed strings in `core.ts`, `todo-model.ts`, and the search worker remain independent of VS Code and are translated at the display boundary in `src/localization.ts` to preserve model compatibility. External details such as communication errors retain their original wording. The standalone Perl importer’s CLI messages are outside the VS Code UI localization scope.
 
-他言語を追加する場合は `package.nls.<locale>.json` と `l10n/bundle.l10n.<locale>.json` を追加し、`src/localization.ts` の日付表示用ロケールも更新してください。翻訳ファイルは追加言語についても自動検査されます。
+To add another language, create `package.nls.<locale>.json` and `l10n/bundle.l10n.<locale>.json`, then update the date-display locale handling in `src/localization.ts`. Translation checks cover additional language files automatically.
 
-実機テストは一時的なVS Codeプロファイルを使います。
+Tests in VS Code use a temporary profile:
 
 ```sh
 npm run test:integration
@@ -368,6 +370,6 @@ VSCODE_TEST_EXTENSIONS_DIR=/path/to/test-extensions node scripts/integration.cjs
 VSCODE_TEST_EXTENSIONS_DIR=/path/to/test-extensions node scripts/integration.cjs --l10n --locale=fr
 ```
 
-日本語・フランス語の実機テストには、指定したテスト用拡張ディレクトリへそれぞれのVS Code言語パックを事前にインストールしてください。要求した言語が有効でなければテストは失敗します。自動テストは表示文言、Webview HTML、ピン操作、日付表示と既存機能を確認します。実際の画面では、日英の長い通知・設定説明、サイドバー幅を狭めたときの表示、読み上げラベルも確認してください。
+Before running Japanese or French tests in VS Code, install the corresponding VS Code language pack in the specified test extensions directory. Tests fail if the requested language is not active. Automated tests check displayed text, webview HTML, pin actions, date formatting, and existing functionality. Also check long notifications and setting descriptions in both languages, narrow sidebars, and accessibility labels in the actual UI.
 
-Localization APIと抽出ツールの仕様: [VS Code API](https://code.visualstudio.com/api/references/vscode-api#l10n)、[vscode-l10n](https://github.com/microsoft/vscode-l10n)。
+Localization API and extraction tool references: [VS Code API](https://code.visualstudio.com/api/references/vscode-api#l10n), [vscode-l10n](https://github.com/microsoft/vscode-l10n).

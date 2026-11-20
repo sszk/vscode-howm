@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "%howm.displayName%",
   "description": "%howm.description%",
-  "version": "0.5.19",
+  "version": "0.5.20",
   "publisher": "local-howm",
   "repository": {
     "type": "git",
@@ -73,6 +73,12 @@
         "command": "howm.create",
         "title": "%howm.create.title%",
         "icon": "$(new-file)"
+      },
+      {
+        "command": "howm.openDailyMemo",
+        "title": "%howm.openDailyMemo.title%",
+        "shortTitle": "%howm.openDailyMemo.shortTitle%",
+        "icon": "$(calendar)"
       },
       {
         "command": "howm.capture",
@@ -258,14 +264,19 @@
           "group": "navigation@1"
         },
         {
+          "command": "howm.openDailyMemo",
+          "when": "view == howm.notes || view == howm.calendar",
+          "group": "navigation@2"
+        },
+        {
           "command": "howm.focusNotesSearch",
           "when": "view == howm.notes",
-          "group": "navigation@2"
+          "group": "navigation@3"
         },
         {
           "command": "howm.refresh",
           "when": "view == howm.notes",
-          "group": "navigation@3"
+          "group": "navigation@4"
         },
         {
           "command": "howm.refresh",

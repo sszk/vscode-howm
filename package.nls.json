@@ -3,6 +3,8 @@
   "howm.description": "Write small Markdown notes, find them through search and come-from links, and manage reminders.",
   "howm.home.title": "howm: Open Home",
   "howm.create.title": "howm: Create Note",
+  "howm.openDailyMemo.title": "howm: Open Daily Memo",
+  "howm.openDailyMemo.shortTitle": "Open Daily Memo",
   "howm.capture.title": "howm: Capture Note",
   "howm.search.title": "howm: Search All Text",
   "howm.searchRegex.title": "howm: Search with Regular Expression",

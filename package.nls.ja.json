@@ -3,6 +3,8 @@
   "howm.description": "小さなMarkdownメモを書き、検索とcome-fromリンクで見つけ、リマインダを管理します。",
   "howm.home.title": "howm: ホーム",
   "howm.create.title": "howm: 新しいメモ",
+  "howm.openDailyMemo.title": "howm: デイリーメモを開く",
+  "howm.openDailyMemo.shortTitle": "デイリーメモを開く",
   "howm.capture.title": "howm: 速記",
   "howm.search.title": "howm: 全文検索",
   "howm.searchRegex.title": "howm: 正規表現検索",

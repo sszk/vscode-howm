@@ -36,6 +36,59 @@ export interface Note {
 export function dateString(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
+export interface DailyMemoCandidate {
+  uri: string;
+  modified: number;
+  path?: string;
+}
+export interface HowmFilenameDateTime {
+  date: string;
+  value: number;
+}
+export function howmFilenameDateTime(
+  uri: string,
+): HowmFilenameDateTime | undefined {
+  let name = uri.split(/[\\/]/).pop() || "";
+  try {
+    name = decodeURIComponent(name);
+  } catch {
+    // Keep an unusual literal '%' harmless when this pure helper is called
+    // independently of VS Code's validated URI implementation.
+  }
+  const pattern =
+    /(?:^|\D)(\d{4})-(\d{2})-(\d{2})(?:\D?([01]\d|2[0-3])([0-5]\d)([0-5]\d))?/g;
+  for (const match of name.matchAll(pattern)) {
+    const date = `${match[1]}-${match[2]}-${match[3]}`;
+    if (!Number.isFinite(dayNumber(date))) continue;
+    return {
+      date,
+      value: Number(
+        `${match[1]}${match[2]}${match[3]}${match[4] || "00"}${match[5] || "00"}${match[6] || "00"}`,
+      ),
+    };
+  }
+  return undefined;
+}
+export function selectDailyMemo<T extends DailyMemoCandidate>(
+  candidates: T[],
+  today = dateString(),
+): T | undefined {
+  return candidates
+    .filter((candidate) => howmFilenameDateTime(candidate.uri)?.date === today)
+    .sort((a, b) => {
+      const filenameDifference =
+        howmFilenameDateTime(b.uri)!.value - howmFilenameDateTime(a.uri)!.value;
+      return (
+        b.modified - a.modified ||
+        filenameDifference ||
+        ((a.path || a.uri) < (b.path || b.uri)
+          ? -1
+          : (a.path || a.uri) > (b.path || b.uri)
+            ? 1
+            : 0)
+      );
+    })[0];
+}
 export function dayNumber(value: string): number {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return NaN;
   const [y, m, d] = value.split("-").map(Number);

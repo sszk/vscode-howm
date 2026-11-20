@@ -29,6 +29,8 @@ import {
   reminderList,
   renderTemplate,
   filename,
+  howmFilenameDateTime,
+  selectDailyMemo,
 } from "./core";
 export async function activate(context: vscode.ExtensionContext) {
   registerUrlPaste(context);
@@ -38,6 +40,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(output);
   let lastResults: Note[] = [];
   let createQueue = Promise.resolve();
+  let dailyQueue = Promise.resolve();
   const register = (name: string, fn: (...args: any[]) => any) =>
     context.subscriptions.push(
       vscode.commands.registerCommand(
@@ -613,6 +616,78 @@ export async function activate(context: vscode.ExtensionContext) {
             .get<string>("defaultTitle", "メモ"),
       }));
     if (title !== undefined) await create(title);
+  });
+  register("openDailyMemo", async () => {
+    const work = async () => {
+      // Reconcile on every invocation so a long-running extension host uses
+      // today's date and sees files created outside VS Code.
+      await store.initialize();
+      if (store.scanFailed)
+        throw new Error(
+          store.error || vscode.l10n.t("Could not search the notes folder."),
+        );
+      const today = dateString();
+      const knownFiles = new Map<string, Note | undefined>(
+        [...store.files.entries()].map(([uri, notes]) => [uri, notes[0]]),
+      );
+      for (const uri of store.unavailableUris())
+        if (!knownFiles.has(uri)) knownFiles.set(uri, undefined);
+      const datedFiles = [...knownFiles.entries()]
+        .map(([uri, note]) => ({
+          uri,
+          note,
+          filename: howmFilenameDateTime(uri),
+        }))
+        .filter((file) => file.filename?.date === today);
+      const candidates: {
+        uri: string;
+        path: string;
+        modified: number;
+        note: Note;
+      }[] = [];
+      let inaccessible = 0;
+      for (const file of datedFiles) {
+        try {
+          const stat = await vscode.workspace.fs.stat(
+            vscode.Uri.parse(file.uri),
+          );
+          if (!file.note) {
+            inaccessible++;
+            continue;
+          }
+          candidates.push({
+            uri: file.uri,
+            path: vscode.Uri.parse(file.uri).path,
+            modified: stat.mtime,
+            note: file.note,
+          });
+        } catch (error) {
+          inaccessible++;
+          output.appendLine(
+            `Daily memo candidate skipped: ${file.uri}: ${String(error)}`,
+          );
+        }
+      }
+      const selected = selectDailyMemo(candidates, today);
+      if (selected) {
+        await open(selected.note);
+        return;
+      }
+      if (inaccessible)
+        throw new Error(
+          vscode.l10n.t(
+            "Could not check today’s memo. No new memo was created.",
+          ),
+        );
+      await create(
+        vscode.workspace
+          .getConfiguration("howm")
+          .get<string>("defaultTitle", "メモ"),
+      );
+    };
+    const next = dailyQueue.then(work);
+    dailyQueue = next.catch(() => {});
+    await next;
   });
   register("capture", async () => {
     const body = await vscode.window.showInputBox({

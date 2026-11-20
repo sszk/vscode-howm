@@ -16,6 +16,8 @@ export class Store implements vscode.Disposable {
   skipped = 0;
   loading = false;
   error?: string;
+  scanFailed = false;
+  private failedUris = new Set<string>();
   private pending?: Promise<void>;
   private refreshSignature = "";
   private refreshRequested = false;
@@ -102,6 +104,7 @@ export class Store implements vscode.Disposable {
     const startingVersions = new Map(this.versions);
     const seen = new Set<string>();
     this.error = undefined;
+    this.scanFailed = false;
     this.skipped = 0;
     const setting = vscode.workspace
       .getConfiguration("howm")
@@ -126,6 +129,7 @@ export class Store implements vscode.Disposable {
       this.watcher?.dispose();
       this.watcher = undefined;
       this.files.clear();
+      this.failedUris.clear();
       this.versions.clear();
     }
     if (!this.root) return;
@@ -147,6 +151,7 @@ export class Store implements vscode.Disposable {
           this.versions.set(key, (this.versions.get(key) || 0) + 1);
           this.files.delete(key);
         }
+      this.failedUris.delete(uri.toString());
       this.events.fire();
     });
     const walk = async (dir: vscode.Uri): Promise<void> => {
@@ -154,11 +159,16 @@ export class Store implements vscode.Disposable {
       try {
         entries = await vscode.workspace.fs.readDirectory(dir);
       } catch (error) {
-        if (generation === this.generation)
+        const missing =
+          error instanceof vscode.FileSystemError &&
+          error.code === "FileNotFound";
+        if (generation === this.generation && !missing) {
+          this.scanFailed = true;
           this.error = vscode.l10n.t(
             "Could not read the notes folder: {0}",
             String(error),
           );
+        }
         return;
       }
       for (const [name, type] of entries) {
@@ -183,6 +193,9 @@ export class Store implements vscode.Disposable {
           this.files.delete(key);
       }
     }
+    if (!this.scanFailed)
+      for (const key of this.failedUris)
+        if (!seen.has(key)) this.failedUris.delete(key);
     for (const doc of vscode.workspace.textDocuments)
       if (this.contains(doc.uri) && doc.isDirty) this.overlay(doc);
   }
@@ -196,6 +209,7 @@ export class Store implements vscode.Disposable {
         (d) => d.uri.toString() === key && d.isDirty,
       );
       if (dirty) {
+        this.failedUris.delete(key);
         this.overlay(dirty);
         return;
       }
@@ -212,6 +226,7 @@ export class Store implements vscode.Disposable {
           this.versions.get(key) === version
         ) {
           this.files.delete(key);
+          this.failedUris.delete(key);
           this.skipped++;
         }
         return;
@@ -223,6 +238,7 @@ export class Store implements vscode.Disposable {
         key,
         parseNotes(key, new TextDecoder().decode(data), stat.mtime),
       );
+      this.failedUris.delete(key);
     } catch (error) {
       if (
         generation === this.generation &&
@@ -231,13 +247,16 @@ export class Store implements vscode.Disposable {
         if (
           error instanceof vscode.FileSystemError &&
           error.code === "FileNotFound"
-        )
+        ) {
           this.files.delete(key);
-        else
+          this.failedUris.delete(key);
+        } else {
+          this.failedUris.add(key);
           this.error = vscode.l10n.t(
             "Could not read the note: {0}",
             String(error),
           );
+        }
       }
     } finally {
       if (notify) this.events.fire();
@@ -252,6 +271,9 @@ export class Store implements vscode.Disposable {
           a.uri.localeCompare(b.uri) ||
           a.startLine - b.startLine,
       );
+  }
+  unavailableUris() {
+    return [...this.failedUris];
   }
   get noteCount() {
     return [...this.files.values()].reduce(

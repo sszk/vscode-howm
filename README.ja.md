@@ -14,6 +14,7 @@ Markdownで断片的に書き、検索とリンクでまとめて読むVS Code�
 
 - `howm: ホーム`：各機能への入口。
 - `howm: 新しいメモ`：タイトルの初期値は「メモ」で、`howm.defaultTitle`で変更できます。選択中のテキストがあればタイトル候補にします。タイトルは変更でき、空欄でも作成できます。
+- `howm: デイリーメモを開く`：ファイル名の日付が今日で、保存済みの更新日時が最も新しいメモを開きます。同時刻の場合はファイル名の日時、パスの順で決定します。今日のメモがなければ、通常と同じファイル名・保存先・テンプレートで1件作成します。カレンダーとメモ一覧の「新しいメモ」の隣にあるカレンダーボタンからも実行できます。
 - `howm: 速記`：短い内容をすぐ保存。長文は作成後にエディタで編集します。
 - `howm: 全文検索`：本文全体を大文字・小文字を区別せず固定文字列検索。結果を選ぶとプレビューし、Enterで開きます。
 - `howm: 正規表現検索`：JavaScript正規表現で検索。`iu`フラグ（大文字・小文字を区別しないUnicode対応）を使用し、検索式は256文字以内です。別スレッドで実行し、2秒で打ち切ります。
@@ -53,17 +54,20 @@ Markdownで断片的に書き、検索とリンクでまとめて読むVS Code�
 この部分は索引対象外です。
 
 # 買い物
+
 [2026-10-10]
 
 [2026-10-10]+ 牛乳を買う
 
 # 読書
+
 [2026-10-11]
 
 <<< 読書
 読みたい本を整理する。
 
 ## 気になる本
+
 この小見出しは「読書」の本文に含まれる。
 ```
 
@@ -227,20 +231,20 @@ Windowsで一覧・検索・カレンダー・Todoからクリックしてもメ
 
 今日が2026年11月5日の場合の入力例です。
 
-| 入力 | 挿入される日付 |
-| --- | --- |
-| 空欄、`0`、`today` | `[2026-11-05]` |
-| `tomorrow`、`+1` | `[2026-11-06]` |
-| `+7` | `[2026-11-12]` |
-| `15` | `[2026-11-15]` |
-| `3` | `[2026-12-03]` |
-| `31` | `[2026-12-31]` |
-| `12/5`、`12-5` | `[2026-12-05]` |
-| `1/10` | `[2027-01-10]` |
-| `2/29` | `[2028-02-29]` |
-| `2027/2/20`、`2027-2-20` | `[2027-02-20]` |
-| `2025/1/1` | `[2025-01-01]` |
-| `thu`、`fri`、`mon` | `[2026-11-05]`、`[2026-11-06]`、`[2026-11-09]` |
+| 入力                     | 挿入される日付                                 |
+| ------------------------ | ---------------------------------------------- |
+| 空欄、`0`、`today`       | `[2026-11-05]`                                 |
+| `tomorrow`、`+1`         | `[2026-11-06]`                                 |
+| `+7`                     | `[2026-11-12]`                                 |
+| `15`                     | `[2026-11-15]`                                 |
+| `3`                      | `[2026-12-03]`                                 |
+| `31`                     | `[2026-12-31]`                                 |
+| `12/5`、`12-5`           | `[2026-12-05]`                                 |
+| `1/10`                   | `[2027-01-10]`                                 |
+| `2/29`                   | `[2028-02-29]`                                 |
+| `2027/2/20`、`2027-2-20` | `[2027-02-20]`                                 |
+| `2025/1/1`               | `[2025-01-01]`                                 |
+| `thu`、`fri`、`mon`      | `[2026-11-05]`、`[2026-11-06]`、`[2026-11-09]` |
 
 年や月を省略すると、今日以降で最も近い該当日を選びます（今日と一致すれば今日）。今月にない日は翌月以降、`2/29` は次に存在する閏日を選びます。`+N` は今日からN日後を意味し、単独の数字は日を指定します。過去の日付には年月日を指定してください。曜日は `mon`〜`sun` に対応し、英字の大文字・小文字と前後の空白は無視します。存在しない日付や解釈できない入力は入力欄にエラーを表示します。
 
@@ -286,29 +290,29 @@ Windowsで一覧・検索・カレンダー・Todoからクリックしてもメ
 
 ## 設定
 
-| 設定                   | 標準値・意味                                                    |
-| ---------------------- | --------------------------------------------------------------- |
-| `howm.notesDirectory`  | ワークスペース内 `howm`。絶対パス・`~/`・相対パス対応           |
-| `howm.filenamePattern` | `{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md`                  |
-| `howm.defaultTitle`    | `メモ`。新規メモのタイトルの初期値。空文字列なら空欄。選択中のテキストを優先 |
-| `howm.template`        | タイトル・日時・本文。`{title}` `{date}` `{time}` `{body}` 対応 |
-| `howm.maxFileSizeKB`   | 1024（最小1）。ディスクから読み込む際、超えるファイルは索引から除外 |
-| `howm.calendarWeekStart` | `sunday`（日曜始まり）。`monday`で月曜始まりに変更 |
-| `howm.todos.dueSoonDays` | `3`（最小0）。締切をオレンジで表示し始める期日の何日前か。0は当日のみ |
-| `workbench.colorCustomizations` | `howm.todoDueSoonForeground`（期日が近い締切）、`howm.todoOverdueForeground`（期限超過）、`howm.scheduleTodayForeground`（当日の予定）の色を指定 |
-| `howm.similarNotes.enabled` | `true`。類似メモの有効・無効 |
-| `howm.similarNotes.maxResults` | `10`（最小1）。類似メモの最大表示件数 |
-| `howm.similarNotes.minSimilarity` | `0.1`（0〜1）。表示する最低類似度 |
-| `howm.similarNotes.autoRefresh` | `true`。編集・メモ切り替え時の自動更新 |
-| `howm.onThisDay.enabled` | `true`。過去の今日の有効・無効 |
-| `howm.relatedPassages.enabled` | `true`。関連箇所の有効・無効 |
-| `howm.relatedPassages.maxResults` | `10`（最小1）。最大表示件数 |
-| `howm.relatedPassages.minSimilarity` | `0.15`（0〜1）。表示する最低類似度 |
-| `howm.relatedPassages.contextLines` | `5`（最小0）。カーソル前後の取得行数 |
-| `howm.relatedPassages.windowLines` | `5`（最小1）。1検索区間の有効な本文の行数 |
-| `howm.relatedPassages.windowStep` | `2`（最小1）。区間の移動幅。`windowLines` 以下に制限 |
-| `howm.relatedPassages.minQueryLength` | `30`（最小1）。装飾・空白を除いた検索キーの最低文字数 |
-| `howm.relatedPassages.autoRefresh` | `true`。カーソル移動・編集・索引更新時の自動検索 |
+| 設定                                  | 標準値・意味                                                                                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `howm.notesDirectory`                 | ワークスペース内 `howm`。絶対パス・`~/`・相対パス対応                                                                                            |
+| `howm.filenamePattern`                | `{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md`                                                                                                   |
+| `howm.defaultTitle`                   | `メモ`。新規メモのタイトルの初期値。空文字列なら空欄。選択中のテキストを優先                                                                     |
+| `howm.template`                       | タイトル・日時・本文。`{title}` `{date}` `{time}` `{body}` 対応                                                                                  |
+| `howm.maxFileSizeKB`                  | 1024（最小1）。ディスクから読み込む際、超えるファイルは索引から除外                                                                              |
+| `howm.calendarWeekStart`              | `sunday`（日曜始まり）。`monday`で月曜始まりに変更                                                                                               |
+| `howm.todos.dueSoonDays`              | `3`（最小0）。締切をオレンジで表示し始める期日の何日前か。0は当日のみ                                                                            |
+| `workbench.colorCustomizations`       | `howm.todoDueSoonForeground`（期日が近い締切）、`howm.todoOverdueForeground`（期限超過）、`howm.scheduleTodayForeground`（当日の予定）の色を指定 |
+| `howm.similarNotes.enabled`           | `true`。類似メモの有効・無効                                                                                                                     |
+| `howm.similarNotes.maxResults`        | `10`（最小1）。類似メモの最大表示件数                                                                                                            |
+| `howm.similarNotes.minSimilarity`     | `0.1`（0〜1）。表示する最低類似度                                                                                                                |
+| `howm.similarNotes.autoRefresh`       | `true`。編集・メモ切り替え時の自動更新                                                                                                           |
+| `howm.onThisDay.enabled`              | `true`。過去の今日の有効・無効                                                                                                                   |
+| `howm.relatedPassages.enabled`        | `true`。関連箇所の有効・無効                                                                                                                     |
+| `howm.relatedPassages.maxResults`     | `10`（最小1）。最大表示件数                                                                                                                      |
+| `howm.relatedPassages.minSimilarity`  | `0.15`（0〜1）。表示する最低類似度                                                                                                               |
+| `howm.relatedPassages.contextLines`   | `5`（最小0）。カーソル前後の取得行数                                                                                                             |
+| `howm.relatedPassages.windowLines`    | `5`（最小1）。1検索区間の有効な本文の行数                                                                                                        |
+| `howm.relatedPassages.windowStep`     | `2`（最小1）。区間の移動幅。`windowLines` 以下に制限                                                                                             |
+| `howm.relatedPassages.minQueryLength` | `30`（最小1）。装飾・空白を除いた検索キーの最低文字数                                                                                            |
+| `howm.relatedPassages.autoRefresh`    | `true`。カーソル移動・編集・索引更新時の自動検索                                                                                                 |
 
 `howm.filenamePattern` では `{YYYY}`（年）、`{MM}`（月）、`{DD}`（日）、`{HH}`（時）、`{mm}`（分）、`{ss}`（秒）を使用できます。年以外は2桁です。保存先内の相対パスで、拡張子は `.md` にしてください。絶対パス、`.`・`..`・空のパス要素、バックスラッシュ、コロン、制御文字は使用できません。同名ファイルが存在すると連番を付けます。
 

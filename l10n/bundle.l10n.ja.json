@@ -16,6 +16,8 @@
   "Select howm Notes Folder": "howmの保存先",
   "Select a notes folder": "メモの保存先を選択してください",
   "Could not create the note": "メモを作成できませんでした",
+  "Could not check today’s memo. No new memo was created.": "今日のメモを確認できなかったため、新しいメモは作成しませんでした。",
+  "Could not search the notes folder.": "メモの保存先を検索できませんでした。",
   "No matching notes": "一致するメモがありません",
   "Filter by title · Preview the selected note": "タイトルで絞り込み · 選択中のメモをプレビュー",
   "$(book) Read All Notes Together": "$(book) すべて連結して読む",

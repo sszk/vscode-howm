@@ -71,6 +71,8 @@
   "Select howm Notes Folder": "Select howm Notes Folder",
   "Select a notes folder": "Select a notes folder",
   "Could not create the note": "Could not create the note",
+  "Could not check today’s memo. No new memo was created.": "Could not check today’s memo. No new memo was created.",
+  "Could not search the notes folder.": "Could not search the notes folder.",
   "No matching notes": "No matching notes",
   "Filter by title · Preview the selected note": "Filter by title · Preview the selected note",
   "$(book) Read All Notes Together": "$(book) Read All Notes Together",

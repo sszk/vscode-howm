@@ -9,6 +9,8 @@ const {
   dayNumber,
   filename,
   renderTemplate,
+  howmFilenameDateTime,
+  selectDailyMemo,
 } = require("../dist/core");
 test("Markdown parser preserves Japanese titles and ignores fenced, indented and inline code", () => {
   const n = parseNote(
@@ -91,6 +93,39 @@ test("filename patterns cannot escape note directory", () => {
   for (const p of ["../a.md", "/a.md", "x/../../a.md", "C:\\a.md", "a.txt"])
     assert.throws(() => filename(p));
   assert.match(filename("{YYYY}/{MM}/note.md"), /^\d{4}\/\d{2}\/note.md$/);
+});
+test("daily memo selection uses filename date, fresh mtime, filename time, and path", () => {
+  const candidates = [
+    { uri: "file:///z/2026-11-20-235959.md", modified: 999 },
+    { uri: "file:///z/2026-11-21-080000.md", modified: 100 },
+    { uri: "file:///z/2026-11-21-090000.md", modified: 200 },
+    { uri: "file:///a/2026-11-21-100000.md", modified: 200 },
+  ];
+  assert.equal(
+    selectDailyMemo(candidates, "2026-11-21").uri,
+    "file:///a/2026-11-21-100000.md",
+  );
+  const tied = [
+    { uri: "file:///b/2026-11-21-100000.md", modified: 200 },
+    { uri: "file:///a/2026-11-21-100000.md", modified: 200 },
+  ];
+  assert.equal(
+    selectDailyMemo(tied, "2026-11-21").uri,
+    "file:///a/2026-11-21-100000.md",
+  );
+  assert.equal(selectDailyMemo(candidates, "2026-11-22"), undefined);
+});
+test("daily memo filename parser rejects invalid dates and decodes URI names", () => {
+  assert.deepEqual(howmFilenameDateTime("file:///2026-11-21-123456.md"), {
+    date: "2026-11-21",
+    value: 20261121123456,
+  });
+  assert.deepEqual(howmFilenameDateTime("file:///prefix%202026-11-21.md"), {
+    date: "2026-11-21",
+    value: 20261121000000,
+  });
+  assert.equal(howmFilenameDateTime("file:///2026-02-29.md"), undefined);
+  assert.equal(howmFilenameDateTime("file:///plain.md"), undefined);
 });
 test("template replacement does not interpret user content as placeholders", () => {
   assert.equal(renderTemplate("{title}\n{body}", "{body}", "$&"), "{body}\n$&");

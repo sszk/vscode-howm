@@ -154,6 +154,7 @@ exports.run = async () => {
     await require("./date-input-integration.cjs").run(root);
     await require("./pinned-notes-integration.cjs").run(root);
     await require("./windows-path-link-integration.cjs").run(root);
+    await require("./daily-memo-integration.cjs").run(root);
 
     console.log(
       "INTEGRATION PASSED: activation, links, completion, undo, dirty overlay, external edit/delete, reminder picker selection",

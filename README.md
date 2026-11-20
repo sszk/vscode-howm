@@ -14,6 +14,7 @@ Open a folder and run `howm: Create Note`. By default, notes are saved in its `h
 
 - `howm: Open Home`: Open the main menu.
 - `howm: Create Note`: Create a note with an editable title. The default is `メモ` (Japanese for “note”); change it with `howm.defaultTitle`. Selected text takes precedence as the suggested title. You can also leave the title empty.
+- `howm: Open Daily Memo`: Open today’s howm file with the newest saved modification time. Ties are resolved by the timestamp in the filename, then by path. If no file dated today exists, create one using the normal filename, folder, and template settings. The calendar button beside Create Note runs the same command.
 - `howm: Capture Note`: Save a short piece of text immediately. Edit longer content in the editor afterward.
 - `howm: Search All Text`: Search the full text of notes using a case-insensitive literal query. Select a result to preview it and press Enter to open it.
 - `howm: Search with Regular Expression`: Search with JavaScript regular expressions using the `iu` flags for case-insensitive Unicode matching. Expressions are limited to 256 characters. Searches run in a separate thread and stop after two seconds.
@@ -42,7 +43,7 @@ Pin state is stored in the extension’s `globalState` and restored after a rest
 
 Preview the text when selecting a result.
 
->>> Keyboard navigation
+> > > Keyboard navigation
 
 [2026-10-15]!7 Build a prototype
 ```
@@ -53,17 +54,20 @@ A file can contain multiple notes. Each `# Heading` starts a note that continues
 This preamble is not indexed.
 
 # Shopping
+
 [2026-10-10]
 
 [2026-10-10]+ Buy milk
 
 # Reading
+
 [2026-10-11]
 
 <<< Reading
 Organize the books I want to read.
 
 ## Books of interest
+
 This subheading belongs to the Reading note.
 ```
 
@@ -116,14 +120,14 @@ The command does not check file existence or make network requests. Insertion an
 
 Write `[YYYY-MM-DD]symbolDays text` and run `howm: Open Todos Sidebar`.
 
-| Symbol | Meaning |
-| --- | --- |
-| `@` | Event. Appears among upcoming events in date order. |
-| `+` | Todo. Priority increases from the specified date. |
-| `!` | Deadline. Priority rises during its lead time and stays high after it is overdue. |
-| `-` | Note to revisit. Rises on the specified date, then gradually falls. |
-| `~` | Deferred item. Priority rises and falls periodically from the specified date. |
-| `.` | Completed item. Excluded from the list. |
+| Symbol | Meaning                                                                           |
+| ------ | --------------------------------------------------------------------------------- |
+| `@`    | Event. Appears among upcoming events in date order.                               |
+| `+`    | Todo. Priority increases from the specified date.                                 |
+| `!`    | Deadline. Priority rises during its lead time and stays high after it is overdue. |
+| `-`    | Note to revisit. Rises on the specified date, then gradually falls.               |
+| `~`    | Deferred item. Priority rises and falls periodically from the specified date.     |
+| `.`    | Completed item. Excluded from the list.                                           |
 
 The optional number sets the lead time or period in days. Defaults are one day for `-`, 30 days for `~`, and seven days for the other kinds. Priorities use an algorithm inspired by howm and do not exactly reproduce the Emacs version’s ordering. Dates are calculated as local calendar days.
 
@@ -227,20 +231,20 @@ Run `howm: Enter Date` from the command palette to interpret an input and insert
 
 Examples when today is November 5, 2026:
 
-| Input | Inserted date |
-| --- | --- |
-| Empty, `0`, `today` | `[2026-11-05]` |
-| `tomorrow`, `+1` | `[2026-11-06]` |
-| `+7` | `[2026-11-12]` |
-| `15` | `[2026-11-15]` |
-| `3` | `[2026-12-03]` |
-| `31` | `[2026-12-31]` |
-| `12/5`, `12-5` | `[2026-12-05]` |
-| `1/10` | `[2027-01-10]` |
-| `2/29` | `[2028-02-29]` |
-| `2027/2/20`, `2027-2-20` | `[2027-02-20]` |
-| `2025/1/1` | `[2025-01-01]` |
-| `thu`, `fri`, `mon` | `[2026-11-05]`, `[2026-11-06]`, `[2026-11-09]` |
+| Input                    | Inserted date                                  |
+| ------------------------ | ---------------------------------------------- |
+| Empty, `0`, `today`      | `[2026-11-05]`                                 |
+| `tomorrow`, `+1`         | `[2026-11-06]`                                 |
+| `+7`                     | `[2026-11-12]`                                 |
+| `15`                     | `[2026-11-15]`                                 |
+| `3`                      | `[2026-12-03]`                                 |
+| `31`                     | `[2026-12-31]`                                 |
+| `12/5`, `12-5`           | `[2026-12-05]`                                 |
+| `1/10`                   | `[2027-01-10]`                                 |
+| `2/29`                   | `[2028-02-29]`                                 |
+| `2027/2/20`, `2027-2-20` | `[2027-02-20]`                                 |
+| `2025/1/1`               | `[2025-01-01]`                                 |
+| `thu`, `fri`, `mon`      | `[2026-11-05]`, `[2026-11-06]`, `[2026-11-09]` |
 
 When the year or month is omitted, the nearest matching date on or after today is used, including today if it matches. A day missing from the current month is found in a later month; `2/29` selects the next valid leap day. `+N` means N days from today, while a number on its own specifies a day of the month. Use a full year/month/day for past dates. Weekdays `mon` through `sun` are supported. Inputs ignore letter case and surrounding whitespace. Invalid dates and unrecognized inputs show an error in the input field.
 
@@ -286,29 +290,29 @@ The feature uses the existing note index and change monitoring instead of scanni
 
 ## Settings
 
-| Setting | Default and meaning |
-| --- | --- |
-| `howm.notesDirectory` | `howm` inside the workspace. Supports absolute paths, `~/`, and relative paths. |
-| `howm.filenamePattern` | `{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md` |
-| `howm.defaultTitle` | `メモ`. Default title for new notes; an empty string leaves it blank. Selected text takes precedence. |
-| `howm.template` | Title, timestamp, and body. Supports `{title}`, `{date}`, `{time}`, and `{body}`. |
-| `howm.maxFileSizeKB` | `1024` (minimum `1`). Files exceeding this limit are excluded when read from disk. |
-| `howm.calendarWeekStart` | `sunday`. Use `monday` to start the week on Monday. |
-| `howm.todos.dueSoonDays` | `3` (minimum `0`). Days before a deadline to start displaying it in orange. `0` means the due date only. |
-| `workbench.colorCustomizations` | Customize `howm.todoDueSoonForeground` (due soon), `howm.todoOverdueForeground` (overdue), and `howm.scheduleTodayForeground` (today’s events). |
-| `howm.similarNotes.enabled` | `true`. Enable or disable Similar Notes. |
-| `howm.similarNotes.maxResults` | `10` (minimum `1`). Maximum similar notes to display. |
-| `howm.similarNotes.minSimilarity` | `0.1` (range `0`–`1`). Minimum similarity to display. |
-| `howm.similarNotes.autoRefresh` | `true`. Automatically refresh after edits or switching notes. |
-| `howm.onThisDay.enabled` | `true`. Enable or disable On This Day. |
-| `howm.relatedPassages.enabled` | `true`. Enable or disable Related Passages. |
-| `howm.relatedPassages.maxResults` | `10` (minimum `1`). Maximum passages to display. |
-| `howm.relatedPassages.minSimilarity` | `0.15` (range `0`–`1`). Minimum similarity to display. |
-| `howm.relatedPassages.contextLines` | `5` (minimum `0`). Lines to collect before and after the cursor. |
-| `howm.relatedPassages.windowLines` | `5` (minimum `1`). Effective body lines per passage. |
-| `howm.relatedPassages.windowStep` | `2` (minimum `1`). Lines to advance between windows, limited to `windowLines`. |
-| `howm.relatedPassages.minQueryLength` | `30` (minimum `1`). Minimum query length after removing formatting and whitespace. |
-| `howm.relatedPassages.autoRefresh` | `true`. Automatically search after cursor movement, edits, or index updates. |
+| Setting                               | Default and meaning                                                                                                                             |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `howm.notesDirectory`                 | `howm` inside the workspace. Supports absolute paths, `~/`, and relative paths.                                                                 |
+| `howm.filenamePattern`                | `{YYYY}/{MM}/{YYYY}-{MM}-{DD}-{HH}{mm}{ss}.md`                                                                                                  |
+| `howm.defaultTitle`                   | `メモ`. Default title for new notes; an empty string leaves it blank. Selected text takes precedence.                                           |
+| `howm.template`                       | Title, timestamp, and body. Supports `{title}`, `{date}`, `{time}`, and `{body}`.                                                               |
+| `howm.maxFileSizeKB`                  | `1024` (minimum `1`). Files exceeding this limit are excluded when read from disk.                                                              |
+| `howm.calendarWeekStart`              | `sunday`. Use `monday` to start the week on Monday.                                                                                             |
+| `howm.todos.dueSoonDays`              | `3` (minimum `0`). Days before a deadline to start displaying it in orange. `0` means the due date only.                                        |
+| `workbench.colorCustomizations`       | Customize `howm.todoDueSoonForeground` (due soon), `howm.todoOverdueForeground` (overdue), and `howm.scheduleTodayForeground` (today’s events). |
+| `howm.similarNotes.enabled`           | `true`. Enable or disable Similar Notes.                                                                                                        |
+| `howm.similarNotes.maxResults`        | `10` (minimum `1`). Maximum similar notes to display.                                                                                           |
+| `howm.similarNotes.minSimilarity`     | `0.1` (range `0`–`1`). Minimum similarity to display.                                                                                           |
+| `howm.similarNotes.autoRefresh`       | `true`. Automatically refresh after edits or switching notes.                                                                                   |
+| `howm.onThisDay.enabled`              | `true`. Enable or disable On This Day.                                                                                                          |
+| `howm.relatedPassages.enabled`        | `true`. Enable or disable Related Passages.                                                                                                     |
+| `howm.relatedPassages.maxResults`     | `10` (minimum `1`). Maximum passages to display.                                                                                                |
+| `howm.relatedPassages.minSimilarity`  | `0.15` (range `0`–`1`). Minimum similarity to display.                                                                                          |
+| `howm.relatedPassages.contextLines`   | `5` (minimum `0`). Lines to collect before and after the cursor.                                                                                |
+| `howm.relatedPassages.windowLines`    | `5` (minimum `1`). Effective body lines per passage.                                                                                            |
+| `howm.relatedPassages.windowStep`     | `2` (minimum `1`). Lines to advance between windows, limited to `windowLines`.                                                                  |
+| `howm.relatedPassages.minQueryLength` | `30` (minimum `1`). Minimum query length after removing formatting and whitespace.                                                              |
+| `howm.relatedPassages.autoRefresh`    | `true`. Automatically search after cursor movement, edits, or index updates.                                                                    |
 
 `howm.filenamePattern` supports `{YYYY}` (year), `{MM}` (month), `{DD}` (day), `{HH}` (hour), `{mm}` (minute), and `{ss}` (second). All fields except the year use two digits. Use a relative path inside the notes folder with a `.md` extension. Absolute paths, `.` or `..` segments, empty path segments, backslashes, colons, and control characters are not allowed. Existing filenames receive a sequence suffix.
 

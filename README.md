@@ -14,7 +14,7 @@ Open a folder and run `howm: Create Note`. By default, notes are saved in its `h
 
 - `howm: Open Home`: Open the main menu.
 - `howm: Create Note`: Create a note with an editable title. The default is `メモ` (Japanese for “note”); change it with `howm.defaultTitle`. Selected text takes precedence as the suggested title. You can also leave the title empty.
-- `howm: Open Daily Memo`: Open today’s howm file with the newest saved modification time. Ties are resolved by the timestamp in the filename, then by path. If no file dated today exists, create one using the normal filename, folder, and template settings. The calendar button beside Create Note runs the same command.
+- `howm: Open Daily Memo`: Open today’s howm file with the newest saved modification time and place the cursor at the end of the file. Ties are resolved by the timestamp in the filename, then by path. If no file dated today exists, create one using the normal filename, folder, and template settings, with the cursor at the end. The calendar button beside Create Note runs the same command.
 - `howm: Capture Note`: Save a short piece of text immediately. Edit longer content in the editor afterward.
 - `howm: Search All Text`: Search the full text of notes using a case-insensitive literal query. Select a result to preview it and press Enter to open it.
 - `howm: Search with Regular Expression`: Search with JavaScript regular expressions using the `iu` flags for case-insensitive Unicode matching. Expressions are limited to 256 characters. Searches run in a separate thread and stop after two seconds.

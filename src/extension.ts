@@ -99,6 +99,7 @@ export async function activate(context: vscode.ExtensionContext) {
     return store.root;
   };
   async function create(title: string, body = "") {
+    let editor: vscode.TextEditor | undefined;
     const work = async () => {
       const root = await ensureRoot(),
         config = vscode.workspace.getConfiguration("howm");
@@ -137,12 +138,21 @@ export async function activate(context: vscode.ExtensionContext) {
       const doc = await vscode.workspace.openTextDocument(uri);
       await doc.save();
       await store.read(uri);
-      await vscode.window.showTextDocument(doc);
+      editor = await vscode.window.showTextDocument(doc);
     };
     const next = createQueue.then(work);
     createQueue = next.catch(() => {});
     await next;
+    return editor;
   }
+  const moveCursorToEnd = (editor: vscode.TextEditor) => {
+    const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
+    editor.selection = new vscode.Selection(end, end);
+    editor.revealRange(
+      new vscode.Range(end, end),
+      vscode.TextEditorRevealType.InCenterIfOutsideViewport,
+    );
+  };
   async function pickNotes(notes: Note[], title: string) {
     lastResults = notes;
     if (!notes.length) {
@@ -670,7 +680,8 @@ export async function activate(context: vscode.ExtensionContext) {
       }
       const selected = selectDailyMemo(candidates, today);
       if (selected) {
-        await open(selected.note);
+        const editor = await open(selected.note);
+        if (editor) moveCursorToEnd(editor);
         return;
       }
       if (inaccessible)
@@ -679,11 +690,12 @@ export async function activate(context: vscode.ExtensionContext) {
             "Could not check today’s memo. No new memo was created.",
           ),
         );
-      await create(
+      const editor = await create(
         vscode.workspace
           .getConfiguration("howm")
           .get<string>("defaultTitle", "メモ"),
       );
+      if (editor) moveCursorToEnd(editor);
     };
     const next = dailyQueue.then(work);
     dailyQueue = next.catch(() => {});

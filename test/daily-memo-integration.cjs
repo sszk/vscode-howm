@@ -35,6 +35,11 @@ exports.run = async (base) => {
     newerPath,
     "an already-open daily memo tab should be activated",
   );
+  assert.deepEqual(
+    vscode.window.activeTextEditor.selection.active,
+    target.lineAt(target.lineCount - 1).range.end,
+    "the cursor should move to the end of an existing daily memo",
+  );
 
   const emptyRoot = path.join(base, "daily-memo-empty");
   await fs.mkdir(emptyRoot, { recursive: true });
@@ -57,4 +62,11 @@ exports.run = async (base) => {
   );
   assert.equal(created.length, 1, "concurrent commands must create one memo");
   assert.ok(created[0].startsWith(today));
+  const createdEditor = vscode.window.activeTextEditor;
+  assert.deepEqual(
+    createdEditor.selection.active,
+    createdEditor.document.lineAt(createdEditor.document.lineCount - 1).range
+      .end,
+    "the cursor should move to the end of a newly created daily memo",
+  );
 };

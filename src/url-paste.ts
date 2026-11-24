@@ -121,7 +121,7 @@ export class UrlPasteProvider
     );
     const edit = new vscode.DocumentPasteEdit(
       sameText ? insertions[0].text : "",
-      vscode.l10n.t("howm: Paste URL as Markdown Link"),
+      vscode.l10n.t("howm: Paste URL or Windows Path as Markdown Link"),
       UrlPasteProvider.kind,
     );
     // Keep the native snippet/cursor handling whenever all selections share a label.

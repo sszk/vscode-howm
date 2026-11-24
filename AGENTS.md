@@ -2,4 +2,5 @@
 
 - 変更を完了するときは、バージョンを進めてからビルドする。
 - バージョン指定がなければ `npm version patch --no-git-tag-version` で `package.json` と `package-lock.json` を更新する。
+- バージョンを進めるときは、そのバージョンの変更内容を `CHANGELOG.md` に追記する。
 - `npm run package` でコンパイルとVSIXの作成を行い、完了報告にバージョンと生成したVSIXのパスを記載する。

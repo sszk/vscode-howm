@@ -1,6 +1,6 @@
 # Markdown howm
 
-English | [日本語](README.ja.md)
+English | [日本語](README.ja.md) | [Changelog](CHANGELOG.md)
 
 A VS Code extension for writing small Markdown notes and reading them together through search and links.
 
@@ -87,7 +87,7 @@ In Markdown notes inside the notes folder, typing `>>> ` or `<<< ` offers comple
 
 Paste a single HTTP/HTTPS URL into a Markdown editor with `Cmd+V` or `Ctrl+V` to insert a link such as `[example.com](https://example.com)` immediately. The extension fetches the page title asynchronously and updates the link label. If text is selected, that text becomes the label and no request is made. Disable this behavior by setting `howm.autoLinkOnPaste` to `false` (the default is `true`).
 
-Pasting a `file:` URL also creates a link labeled with the filename. For example, `file:///C:/資料/設計%20書.pdf` becomes `[設計 書.pdf](file:///C:/資料/設計%20書.pdf)`. Unicode and percent-encoded filenames and shared-folder URLs are supported. For file URLs, the filename is always used even when text is selected. No file is read and no network request is made.
+Pasting a `file:` URL or a backslash-delimited absolute Windows path also creates a link labeled with the filename. For example, `C:\資料\設計 書.pdf` becomes `[設計 書.pdf](file:///C:/資料/設計%20書.pdf)`. Drive paths, UNC paths, Unicode and percent-encoded file URLs are supported. For file links, the filename is always used even when text is selected. No file is read and no network request is made.
 
 Code blocks, inline code, existing Markdown links, multiple URLs, and ordinary prose are not converted. This feature works in Markdown files outside the howm notes folder as well. Choose other paste formats from VS Code’s paste options.
 

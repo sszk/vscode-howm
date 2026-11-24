@@ -1,7 +1,7 @@
 {
   "howm: Enter a valid absolute Windows path, UNC path, or file URI (percent encoding must be valid UTF-8).": "howm: Enter a valid absolute Windows path, UNC path, or file URI (percent encoding must be valid UTF-8).",
   "howm: Could not insert the link": "howm: Could not insert the link",
-  "howm: Paste URL as Markdown Link": "howm: Paste URL as Markdown Link",
+  "howm: Paste URL or Windows Path as Markdown Link": "howm: Paste URL or Windows Path as Markdown Link",
   "{0} items": "{0} items",
   "Not set": "Not set",
   "Loading Todos and Schedule…": "Loading Todos and Schedule…",

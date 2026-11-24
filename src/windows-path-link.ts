@@ -99,10 +99,14 @@ function readableSuffix(value: string): string {
   );
 }
 
-/** Only a single file URL is eligible for automatic paste conversion. */
+/** Only a single file URL or backslash-delimited absolute path is eligible. */
 export function fileUrlLink(input: string): string | undefined {
   const value = input.trim();
-  if (!/^file:\/[^\s\x00-\x1f\x7f]*$/i.test(value)) return undefined;
+  if (/^file:\/[^\s\x00-\x1f\x7f]*$/i.test(value))
+    return windowsPathLink(value);
+  const path =
+    value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value;
+  if (!/^(?:[a-z]:\\|\\\\[^\\]+\\)/i.test(path)) return undefined;
   return windowsPathLink(value);
 }
 

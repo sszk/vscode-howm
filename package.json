@@ -2,7 +2,7 @@
   "name": "markdown-howm",
   "displayName": "%howm.displayName%",
   "description": "%howm.description%",
-  "version": "0.5.21",
+  "version": "0.5.24",
   "publisher": "local-howm",
   "repository": {
     "type": "git",
@@ -22,7 +22,7 @@
   "scripts": {
     "compile": "tsc -p .",
     "test": "npm run compile && npm run l10n:check && node --test test/*.test.cjs",
-    "package": "npm run compile && npm run l10n:check && vsce package --allow-missing-repository",
+    "package": "npm run compile && npm run l10n:check && vsce package --dependencies --allow-missing-repository",
     "test:integration": "npm run compile && node scripts/integration.cjs",
     "test:url-paste": "npm run compile && node scripts/integration.cjs --url-paste",
     "test:view-registration": "npm run compile && node scripts/integration.cjs --missing-view",

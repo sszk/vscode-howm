@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { windowsPathLink, fileUrlLink } = require("../dist/windows-path-link");
 
-test("automatic file URL paste uses a decoded filename and the existing path conversion", () => {
+test("automatic file URL and Windows path paste uses the existing path conversion", () => {
   for (const [input, expected] of [
     ["file:///tmp/report.pdf", "[report.pdf](file:///tmp/report.pdf)"],
     [
@@ -18,15 +18,27 @@ test("automatic file URL paste uses a decoded filename and the existing path con
       "[doc.md](file:///tmp/doc.md?x=1#section)",
     ],
     ["file:/tmp/folder/", "[folder](file:///tmp/folder/)"],
+    [String.raw`C:\dir\file.txt`, "[file.txt](file:///C:/dir/file.txt)"],
+    [
+      String.raw` "C:\共有資料\設計 書.pdf" `,
+      "[設計 書.pdf](file:///C:/共有資料/設計%20書.pdf)",
+    ],
+    [
+      String.raw`\\Server\共有\資料.pdf`,
+      "[資料.pdf](file://Server/共有/資料.pdf)",
+    ],
   ])
     assert.equal(fileUrlLink(input), expected, input);
 });
 
-test("automatic file URL paste rejects other clipboard text and malformed file URLs", () => {
+test("automatic file paste rejects relative paths, prose and malformed file URLs", () => {
   for (const input of [
     "",
     "https://example.com/file.txt",
     "C:/a.txt",
+    String.raw`dir\a.txt`,
+    String.raw`\dir\a.txt`,
+    String.raw`C:dir\a.txt`,
     "//server/share/a.txt",
     '"file:///tmp/a.txt"',
     "[a](file:///tmp/a.txt)",

@@ -86,17 +86,25 @@ exports.run = async () => {
         "file://Server/share/a%5Bb%5D.txt",
         "[a\\[b\\].txt](file://Server/share/a%5Bb%5D.txt)",
       ],
+      [
+        String.raw`C:\共有資料\基本設計\設計 書.pdf`,
+        "[設計 書.pdf](file:///C:/共有資料/基本設計/設計%20書.pdf)",
+      ],
+      [
+        String.raw`\\Server\共有\資料.pdf`,
+        "[資料.pdf](file://Server/共有/資料.pdf)",
+      ],
     ]) {
       ed = await editor();
       assert.equal(
         await paste(ed, input),
         expected,
-        "file URLs use their filename",
+        "file URLs and Windows paths use their filename",
       );
       assert.equal(
         requests.length,
         0,
-        "file URL paste must skip title fetching",
+        "file URL and Windows path paste must skip title fetching",
       );
       assert.equal(ed.selection.active.character, expected.length);
       await vscode.commands.executeCommand("undo");

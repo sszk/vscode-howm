@@ -43,7 +43,7 @@
   "howm.similarNotes.title": "類似メモ",
   "howm.relatedPassages.title": "関連箇所",
   "howm.configuration.title": "Markdown howm",
-  "howm.autoLinkOnPaste.description": "Markdownに単一のHTTP/HTTPS URLを貼り付けると、ページタイトル付きのリンクへ変換します。選択中のテキストがある場合はリンク名に使用します。file URLの場合はファイル名をリンク名に使用します。",
+  "howm.autoLinkOnPaste.description": "Markdownに単一のHTTP/HTTPS URL、file URL、またはバックスラッシュ区切りのWindows絶対パスを貼り付けるとリンクへ変換します。Webリンクにはページタイトルか選択文字列、ファイルリンクにはファイル名を使用します。",
   "howm.notesDirectory.description": "メモの保存先。空欄はワークスペース内のhowm。絶対パス、~/、ワークスペース相対パスに対応。",
   "howm.filenamePattern.description": "新規メモのファイル名。重複時は連番を追加。",
   "howm.defaultTitle.description": "新しいメモのタイトルの初期値。選択中のテキストがある場合はそちらを優先します。空文字列にすると初期値を空欄にできます。",

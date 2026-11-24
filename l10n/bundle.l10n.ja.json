@@ -81,7 +81,7 @@
   "No notes.": "メモがありません。",
   "Open Source Note": "元のメモを開く",
   "Loading Todos and Schedule…": "Todoと予定を読み込み中…",
-  "howm: Paste URL as Markdown Link": "howm: URLをMarkdownリンクとして貼り付け",
+  "howm: Paste URL or Windows Path as Markdown Link": "howm: URLまたはWindowsパスをMarkdownリンクとして貼り付け",
   "Open source note: {0}": "元のメモを開く: {0}",
   "howm: {0} ({1})": "howm: {0} ({1})",
   "howm: Todos and Schedule — {0} / {1} notes / {2} reminders": "howm: Todoと予定 — {0} / メモ{1}件 / リマインダ{2}件",

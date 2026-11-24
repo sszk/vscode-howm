@@ -43,7 +43,7 @@
   "howm.similarNotes.title": "Similar Notes",
   "howm.relatedPassages.title": "Related Passages",
   "howm.configuration.title": "Markdown howm",
-  "howm.autoLinkOnPaste.description": "Convert a single HTTP/HTTPS URL pasted into Markdown to a link with the page title. Selected text is used as the link label. For file URLs, the filename is used.",
+  "howm.autoLinkOnPaste.description": "Convert a single HTTP/HTTPS URL, file URL, or backslash-delimited absolute Windows path pasted into Markdown to a link. Web links use the page title or selected text; file links use the filename.",
   "howm.notesDirectory.description": "Notes folder. Leave empty to use howm in the workspace. Supports absolute paths, ~/, and workspace-relative paths.",
   "howm.filenamePattern.description": "Filename pattern for new notes. Adds a sequence number if the file already exists.",
   "howm.defaultTitle.description": "Default title for new notes. Selected text takes precedence. Set to an empty string to start with a blank title.",
